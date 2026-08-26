@@ -1,49 +1,79 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="layout" content="main" />
-    <g:set var="entityName" value="${message(code: 'author.label', default: 'Author')}" />
-    <title><g:message code="default.show.label" args="[entityName]" /></title>
+    <meta name="layout" content="main"/>
+    <title>Author Details</title>
 </head>
+
 <body>
-<div id="content" role="main">
-    <div class="container">
-        <section class="row">
-            <a href="#show-author" class="visually-hidden-focusable" tabindex="-1"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
-            <nav class="navbar navbar-expand-lg bg-body-tertiary">
-                <ul class="navbar-nav container-fluid">
-                    <li class="nav-item"><a class="nav-link btn" aria-label="Home" href="${createLink(uri: '/')}">
-                        <i class="bi-house"></i> <g:message code="default.home.label"/></a>
-                    </li>
-                    <li class="nav-item"><g:link class="nav-link btn" aria-label="List" action="index">
-                        <i class="bi-database"></i> <g:message code="default.list.label" args="[entityName]" /></g:link>
-                    </li>
-                    <li class="nav-item me-lg-auto">
-                        <g:link class="nav-link btn" aria-label="List" action="create"><i class="bi-database-add"></i> <g:message code="default.new.label" args="[entityName]" /></g:link>
-                    </li>
-                </ul>
-            </nav>
-        </section>
-        <section class="row">
-            <div id="show-author" class="col-12 content scaffold-show" role="main">
-                <h1><g:message code="default.show.label" args="[entityName]" /></h1>
-                <g:if test="${flash.message}">
-                    <div class="alert alert-primary" role="alert"><i class="bi-info-circle"></i> ${flash.message}</div>
-                </g:if>
-                <f:display bean="author" listClass="container" listItemClass="row mb-3" labelClass="form-label col-sm-3 text-sm-end" valueClass="col-sm-9" />
-                <g:form resource="${this.author}" controller="author" method="DELETE">
-                    <fieldset class="bg-body-tertiary">
-                        <g:link class="btn btn-outline-primary" action="edit" resource="${this.author}" controller="author">
-                            <i class="bi-pencil-square"></i> <g:message code="default.button.edit.label" default="Edit" />
-                        </g:link>
-                        <button class="btn btn-outline-primary" type="submit" onclick="return confirm('${message(code: 'default.button.delete.confirm.message', default: 'Are you sure?')}');">
-                            <i class="bi-trash"></i> ${message(code: 'default.button.delete.label', default: 'Delete')}
-                        </button>
-                    </fieldset>
-                </g:form>
-            </div>
-        </section>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <h1 class="page-title">Author Details</h1>
+
+        <g:link
+            action="index"
+            class="btn btn-secondary">
+            Back to Authors
+        </g:link>
+
     </div>
+
+    <g:if test="${flash.message}">
+        <div class="alert alert-success">
+            ${flash.message}
+        </div>
+    </g:if>
+
+    <div class="card shadow-sm">
+
+        <div class="card-body">
+
+            <f:display
+                bean="author"
+                listClass="container"
+                listItemClass="row mb-3"
+                labelClass="form-label col-sm-3 text-sm-end fw-semibold"
+                valueClass="col-sm-9"
+            />
+
+        </div>
+
+    </div>
+
+    <sec:ifAnyGranted roles="ROLE_ADMIN">
+
+        <div class="mt-4 d-flex gap-2">
+
+            <g:link
+                action="edit"
+                id="${author.id}"
+                class="btn btn-warning">
+                Edit
+            </g:link>
+
+            <g:form
+                resource="${author}"
+                controller="author"
+                method="DELETE"
+                class="d-inline">
+
+                <button
+                    class="btn btn-danger"
+                    type="submit"
+                    onclick="return confirm('Are you sure you want to delete this author?');">
+                    Delete
+                </button>
+
+            </g:form>
+
+        </div>
+
+    </sec:ifAnyGranted>
+
 </div>
+
 </body>
 </html>

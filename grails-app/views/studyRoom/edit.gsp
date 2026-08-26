@@ -1,56 +1,85 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="layout" content="main" />
-    <g:set var="entityName" value="${message(code: 'studyRoom.label', default: 'StudyRoom')}" />
-    <title><g:message code="default.edit.label" args="[entityName]" /></title>
+    <meta name="layout" content="main"/>
+    <title>Edit Study Room</title>
 </head>
+
 <body>
-<div id="content" role="main">
-    <div class="container">
-        <section class="row">
-            <a href="#edit-studyRoom" class="visually-hidden-focusable" tabindex="-1"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
-            <nav class="navbar navbar-expand-lg bg-body-tertiary">
-                <ul class="navbar-nav container-fluid">
-                    <li class="nav-item"><a class="nav-link btn" aria-label="Home" href="${createLink(uri: '/')}">
-                        <i class="bi-house"></i> <g:message code="default.home.label"/></a>
-                    </li>
-                    <li class="nav-item"><g:link class="nav-link btn" aria-label="List" action="index">
-                        <i class="bi-database"></i> <g:message code="default.list.label" args="[entityName]" /></g:link>
-                    </li>
-                    <li class="nav-item me-lg-auto">
-                        <g:link class="nav-link btn" aria-label="List" action="create"><i class="bi-database-add"></i> <g:message code="default.new.label" args="[entityName]" /></g:link>
-                    </li>
-                </ul>
-            </nav>
-        </section>
-        <section class="row">
-            <div id="edit-studyRoom" class="col-12 content scaffold-edit" role="main">
-                <h1><g:message code="default.edit.label" args="[entityName]" /></h1>
-                <g:if test="${flash.message}">
-                    <div class="message" role="status">${flash.message}</div>
-                </g:if>
-                <g:hasErrors bean="${this.studyRoom}">
-                    <ul class="alert alert-danger list-unstyled" role="alert">
-                        <g:eachError bean="${this.studyRoom}" var="error">
-                            <li <g:if test="${error in org.springframework.validation.FieldError}">data-field-id="${error.field}"</g:if>><i class="bi-exclamation-circle"></i> <g:message error="${error}"/></li>
-                        </g:eachError>
-                    </ul>
-                </g:hasErrors>
-                <g:form resource="${this.studyRoom}" controller="studyRoom" method="PUT">
-                    <g:hiddenField name="version" value="${this.studyRoom?.version}" />
-                    <fieldset class="form">
-                        <f:all bean="studyRoom" class="row" requiredClass="mb-3 required" labelClass="col-sm-2 col-form-label text-sm-end" divClass="col-sm-10" widget-class="form-control" widget-invalidClass="is-invalid" widget-selectDateClass="w-auto form-select d-inline" widget-checkBoxClass="form-check-input align-middle" />
-                    </fieldset>
-                    <fieldset class="bg-body-tertiary">
-                        <button class="btn btn-outline-primary" type="submit">
-                            <i class="bi-floppy"></i> ${message(code: 'default.button.update.label', default: 'Update')}
-                        </button>
-                    </fieldset>
-                </g:form>
-            </div>
-        </section>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <h1 class="page-title">Edit Study Room</h1>
+
+        <g:link
+            action="index"
+            class="btn btn-secondary">
+            Back to Study Rooms
+        </g:link>
+
     </div>
+
+    <g:if test="${flash.message}">
+        <div class="alert alert-info">
+            ${flash.message}
+        </div>
+    </g:if>
+
+    <g:hasErrors bean="${studyRoom}">
+        <div class="alert alert-danger">
+            Please fix the errors below.
+        </div>
+    </g:hasErrors>
+
+    <div class="card shadow-sm">
+
+        <div class="card-body">
+
+            <g:form
+                resource="${studyRoom}"
+                controller="studyRoom"
+                method="PUT">
+
+                <g:hiddenField
+                    name="version"
+                    value="${studyRoom?.version}"
+                />
+
+                <fieldset class="form">
+
+                    <f:all
+                        bean="studyRoom"
+                        class="row"
+                        requiredClass="mb-3 required"
+                        labelClass="col-sm-3 col-form-label text-sm-end"
+                        divClass="col-sm-9"
+                        widget-class="form-control"
+                        widget-invalidClass="is-invalid"
+                        widget-selectDateClass="w-auto form-select d-inline"
+                        widget-checkBoxClass="form-check-input align-middle"
+                    />
+
+                </fieldset>
+
+                <div class="mt-4">
+
+                    <button
+                        class="btn btn-primary"
+                        type="submit">
+                        Update Study Room
+                    </button>
+
+                </div>
+
+            </g:form>
+
+        </div>
+
+    </div>
+
 </div>
+
 </body>
 </html>

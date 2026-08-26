@@ -1,43 +1,59 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="layout" content="main" />
-    <g:set var="entityName" value="${message(code: 'category.label', default: 'Category')}" />
-    <title><g:message code="default.list.label" args="[entityName]" /></title>
+    <meta name="layout" content="main"/>
+    <title>Categories</title>
 </head>
-<body>
-<div id="content" role="main">
-    <div class="container">
-        <section class="row">
-            <a href="#list-category" class="visually-hidden-focusable" tabindex="-1"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
-            <nav class="navbar navbar-expand-lg bg-body-tertiary">
-                <ul class="navbar-nav container-fluid">
-                    <li class="nav-item"><a class="nav-link btn" aria-label="Home" href="${createLink(uri: '/')}">
-                        <i class="bi-house"></i> <g:message code="default.home.label"/></a>
-                    </li>
-                    <li class="nav-item me-lg-auto">
-                        <g:link class="nav-link btn" aria-label="List" action="create"><i class="bi-database-add"></i> <g:message code="default.new.label" args="[entityName]" /></g:link>
-                    </li>
-                </ul>
-            </nav>
-        </section>
-        <section class="row">
-            <div id="list-category" class="col-12 content scaffold-list" role="main">
-                <h1>
-                    <g:message code="default.list.label" args="[entityName]" /></h1>
-                <g:if test="${flash.message}">
-                    <div class="alert alert-primary" role="alert"><i class="bi-info-circle"></i> ${flash.message}</div>
-                </g:if>
-                <f:table class="scaffold table table-striped table-sm" controller="category" collection="${categoryList}"/>
 
-                <g:if test="${categoryCount > params.int('max')}">
-                    <div class="btn-toolbar mb-3" role="toolbar" aria-label="Toolbar with button groups">
-                        <g:paginate activeClass="active" class="btn" total="${categoryCount ?: 0}" />
-                    </div>
-                </g:if>
-            </div>
-        </section>
+<body>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <h1 class="page-title">Categories</h1>
+
+        <g:link
+            action="create"
+            class="btn btn-primary">
+            Add Category
+        </g:link>
+
     </div>
+
+    <g:if test="${flash.message}">
+        <div class="alert alert-info">
+            ${flash.message}
+        </div>
+    </g:if>
+
+    <div class="card shadow-sm">
+
+        <div class="card-body">
+
+            <f:table
+                class="table table-striped table-hover align-middle"
+                controller="category"
+                collection="${categoryList}"
+            />
+
+        </div>
+
+    </div>
+
+    <g:if test="${categoryCount > params.int('max')}">
+
+        <div class="mt-3">
+
+            <g:paginate
+                total="${categoryCount ?: 0}"
+            />
+
+        </div>
+
+    </g:if>
+
 </div>
+
 </body>
 </html>

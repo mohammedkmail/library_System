@@ -12,3 +12,64 @@
 *= require grails
 *= require_self
 */
+
+
+
+body {
+    background-color: #f8f9fa;
+}
+
+main {
+    min-height: 80vh;
+}
+
+.card {
+    border-radius: 12px;
+}
+
+.card-header,
+.card-footer {
+    background-color: #ffffff;
+}
+
+.table {
+    background-color: #ffffff;
+}
+
+.table th {
+    white-space: nowrap;
+}
+
+.btn {
+    border-radius: 8px;
+}
+
+.form-control,
+.form-select {
+    border-radius: 8px;
+}
+
+.page-header {
+    margin-bottom: 1.5rem;
+}
+
+.page-title {
+    font-weight: 600;
+}
+
+.stat-card h2 {
+    margin-bottom: 0;
+    font-weight: 700;
+}
+
+.book-cover {
+    width: 70px;
+    height: 95px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.book-cover-large {
+    max-height: 350px;
+    object-fit: contain;
+}

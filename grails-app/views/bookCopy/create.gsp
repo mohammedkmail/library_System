@@ -1,53 +1,80 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="layout" content="main" />
-    <g:set var="entityName" value="${message(code: 'bookCopy.label', default: 'BookCopy')}" />
-    <title><g:message code="default.create.label" args="[entityName]" /></title>
+    <meta name="layout" content="main"/>
+    <title>Create Book Copy</title>
 </head>
+
 <body>
-<div id="content" role="main">
-    <div class="container">
-        <section class="row">
-            <a href="#create-bookCopy" class="visually-hidden-focusable" tabindex="-1"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
-            <nav class="navbar navbar-expand-lg bg-body-tertiary">
-                <ul class="navbar-nav container-fluid">
-                    <li class="nav-item"><a class="nav-link btn" aria-label="Home" href="${createLink(uri: '/')}">
-                        <i class="bi-house"></i> <g:message code="default.home.label"/></a>
-                    </li>
-                    <li class="nav-item me-lg-auto"><g:link class="nav-link btn" aria-label="List" action="index">
-                        <i class="bi-database"></i> <g:message code="default.list.label" args="[entityName]" /></g:link>
-                    </li>
-                </ul>
-            </nav>
-        </section>
-        <section class="row">
-            <div id="create-bookCopy" class="col-12 content scaffold-create" role="main">
-                <h1><g:message code="default.create.label" args="[entityName]" /></h1>
-                <g:if test="${flash.message}">
-                    <div class="message" role="status">${flash.message}</div>
-                </g:if>
-                <g:hasErrors bean="${this.bookCopy}">
-                    <ul class="alert alert-danger list-unstyled" role="alert">
-                        <g:eachError bean="${this.bookCopy}" var="error">
-                            <li <g:if test="${error in org.springframework.validation.FieldError}">data-field-id="${error.field}"</g:if>><i class="bi-exclamation-circle"></i> <g:message error="${error}"/></li>
-                        </g:eachError>
-                    </ul>
-                </g:hasErrors>
-               
-                <g:form resource="${this.bookCopy}" controller="${bookCopy}" method="POST">
-                    <fieldset class="form">
-                        <f:all bean="bookCopy" class="row" requiredClass="mb-3 required" labelClass="col-sm-2 col-form-label text-sm-end" divClass="col-sm-10" widget-class="form-control" widget-invalidClass="is-invalid" widget-selectDateClass="w-auto form-select d-inline" widget-checkBoxClass="form-check-input align-middle" />
-                    </fieldset>
-                    <fieldset class="bg-body-tertiary">
-                        <button class="btn btn-outline-primary" type="submit">
-                            <i class="bi-floppy"></i> ${message(code: 'default.button.create.label', default: 'Create')}
-                        </button>
-                    </fieldset>
-                </g:form>
-            </div>
-        </section>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <h1 class="page-title">Create Book Copy</h1>
+
+        <g:link
+            action="index"
+            class="btn btn-secondary">
+            Back to Book Copies
+        </g:link>
+
     </div>
+
+    <g:if test="${flash.message}">
+        <div class="alert alert-info">
+            ${flash.message}
+        </div>
+    </g:if>
+
+    <g:hasErrors bean="${bookCopy}">
+        <div class="alert alert-danger">
+            Please fix the errors below.
+        </div>
+    </g:hasErrors>
+
+    <div class="card shadow-sm">
+
+        <div class="card-body">
+
+            <g:form
+                resource="${bookCopy}"
+                controller="bookCopy"
+                method="POST">
+
+                <fieldset class="form">
+
+                    <f:all
+                        bean="bookCopy"
+                        class="row"
+                        requiredClass="mb-3 required"
+                        labelClass="col-sm-3 col-form-label text-sm-end"
+                        divClass="col-sm-9"
+                        widget-class="form-control"
+                        widget-invalidClass="is-invalid"
+                        widget-selectDateClass="w-auto form-select d-inline"
+                        widget-checkBoxClass="form-check-input align-middle"
+                    />
+
+                </fieldset>
+
+                <div class="mt-4">
+
+                    <button
+                        class="btn btn-primary"
+                        type="submit">
+                        Create Book Copy
+                    </button>
+
+                </div>
+
+            </g:form>
+
+        </div>
+
+    </div>
+
 </div>
+
 </body>
 </html>
