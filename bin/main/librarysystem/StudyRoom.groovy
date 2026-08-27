@@ -7,7 +7,9 @@ class StudyRoom {
     BigDecimal pricePerHour
     Boolean active = true
 
-    static hasMany = [reservations: RoomReservation]
+    static hasMany = [
+        reservations: RoomReservation
+    ]
 
     static constraints = {
         roomNumber nullable: false, blank: false, unique: true

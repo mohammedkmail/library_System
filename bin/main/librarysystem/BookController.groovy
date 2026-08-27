@@ -1,20 +1,23 @@
 package librarysystem
 
-import org.springframework.web.multipart.MultipartFile
-
+import grails.plugin.springsecurity.SpringSecurityService
 import grails.validation.ValidationException
+import org.springframework.web.multipart.MultipartFile
 
 import static org.springframework.http.HttpStatus.*
 
 class BookController {
 
     BookService bookService
+    DigitalAccessService digitalAccessService
+    SpringSecurityService springSecurityService
 
     static allowedMethods = [
         save  : "POST",
         update: "PUT",
         delete: "DELETE"
     ]
+
 
     def index(Integer max) {
 
@@ -56,6 +59,7 @@ class BookController {
         ]
     }
 
+
     def show(Long id) {
 
         Book book = bookService.get(id)
@@ -75,10 +79,31 @@ class BookController {
                 ]
             )
 
+        boolean canReadDigital = false
+
+        User currentUser =
+            springSecurityService.currentUser as User
+
+        if (
+            currentUser &&
+            book.digitalAvailable
+        ) {
+
+            digitalAccessService.expireOldRentals()
+
+            canReadDigital =
+                digitalAccessService.canAccessBook(
+                    currentUser,
+                    book
+                )
+        }
+
         respond book, model: [
-            availableCopies: availableCopies
+            availableCopies : availableCopies,
+            canReadDigital  : canReadDigital
         ]
     }
+
 
     def create() {
 
@@ -88,6 +113,7 @@ class BookController {
         ]
     }
 
+
     def save(Book book) {
 
         if (book == null) {
@@ -96,13 +122,22 @@ class BookController {
         }
 
         try {
-            MultipartFile coverFile =
-            request.getFile('coverFile')
 
-            if (coverFile && !coverFile.empty) {
-                book.coverData = coverFile.bytes
-                book.coverContentType = coverFile.contentType
-    }
+            MultipartFile coverFile =
+                request.getFile('coverFile')
+
+            if (
+                coverFile &&
+                !coverFile.empty
+            ) {
+
+                book.coverData =
+                    coverFile.bytes
+
+                book.coverContentType =
+                    coverFile.contentType
+            }
+
             bookService.save(book)
 
         } catch (ValidationException e) {
@@ -113,8 +148,11 @@ class BookController {
             respond book.errors,
                 view: 'create',
                 model: [
-                    authorList  : Author.list(sort: 'name'),
-                    categoryList: Category.list(sort: 'name')
+                    authorList:
+                        Author.list(sort: 'name'),
+
+                    categoryList:
+                        Category.list(sort: 'name')
                 ]
 
             return
@@ -144,6 +182,7 @@ class BookController {
         }
     }
 
+
     def edit(Long id) {
 
         Book book = bookService.get(id)
@@ -159,6 +198,7 @@ class BookController {
         ]
     }
 
+
     def update(Book book) {
 
         if (book == null) {
@@ -167,13 +207,22 @@ class BookController {
         }
 
         try {
-            MultipartFile coverFile =
-            request.getFile('coverFile')
 
-            if (coverFile && !coverFile.empty) {
-                book.coverData = coverFile.bytes
-                book.coverContentType = coverFile.contentType
-        }
+            MultipartFile coverFile =
+                request.getFile('coverFile')
+
+            if (
+                coverFile &&
+                !coverFile.empty
+            ) {
+
+                book.coverData =
+                    coverFile.bytes
+
+                book.coverContentType =
+                    coverFile.contentType
+            }
+
             bookService.save(book)
 
         } catch (ValidationException e) {
@@ -184,8 +233,11 @@ class BookController {
             respond book.errors,
                 view: 'edit',
                 model: [
-                    authorList  : Author.list(sort: 'name'),
-                    categoryList: Category.list(sort: 'name')
+                    authorList:
+                        Author.list(sort: 'name'),
+
+                    categoryList:
+                        Category.list(sort: 'name')
                 ]
 
             return
@@ -215,6 +267,7 @@ class BookController {
         }
     }
 
+
     def delete(Long id) {
 
         if (id == null) {
@@ -222,7 +275,8 @@ class BookController {
             return
         }
 
-        Book book = bookService.get(id)
+        Book book =
+            bookService.get(id)
 
         if (!book) {
             notFound()
@@ -246,7 +300,10 @@ class BookController {
                     ]
                 )
 
-                redirect action: "index", method: "GET"
+                redirect(
+                    action: "index",
+                    method: "GET"
+                )
             }
 
             '*' {
@@ -254,6 +311,35 @@ class BookController {
             }
         }
     }
+
+
+    def cover(Long id) {
+
+        Book book =
+            bookService.get(id)
+
+        if (
+            !book ||
+            !book.coverData
+        ) {
+
+            render status: 404
+            return
+        }
+
+        response.contentType =
+            book.coverContentType ?: 'image/jpeg'
+
+        response.contentLength =
+            book.coverData.length
+
+        response.outputStream.write(
+            book.coverData
+        )
+
+        response.outputStream.flush()
+    }
+
 
     protected void notFound() {
 
@@ -272,7 +358,10 @@ class BookController {
                     ]
                 )
 
-                redirect action: "index", method: "GET"
+                redirect(
+                    action: "index",
+                    method: "GET"
+                )
             }
 
             '*' {
@@ -280,24 +369,4 @@ class BookController {
             }
         }
     }
-
-    def cover(Long id) {
-
-    Book book = bookService.get(id)
-
-    if (!book || !book.coverData) {
-        render status: 404
-        return
-    }
-
-    response.contentType =
-        book.coverContentType ?: 'image/jpeg'
-
-    response.contentLength =
-        book.coverData.length
-
-    response.outputStream.write(book.coverData)
-    response.outputStream.flush()
-    }
-
 }

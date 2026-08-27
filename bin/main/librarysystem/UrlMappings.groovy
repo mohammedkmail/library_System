@@ -8,15 +8,30 @@ class UrlMappings {
         // Book REST API
         // =========================
 
-        get "/api/books"(controller: "bookRest", action: "index")
+        get "/api/books"(
+            controller: "bookRest",
+            action: "index"
+        )
 
-        get "/api/books/$id"(controller: "bookRest", action: "show")
+        get "/api/books/$id"(
+            controller: "bookRest",
+            action: "show"
+        )
 
-        post "/api/books"(controller: "bookRest", action: "save")
+        post "/api/books"(
+            controller: "bookRest",
+            action: "save"
+        )
 
-        put "/api/books/$id"(controller: "bookRest", action: "update")
+        put "/api/books/$id"(
+            controller: "bookRest",
+            action: "update"
+        )
 
-        delete "/api/books/$id"(controller: "bookRest", action: "delete")
+        delete "/api/books/$id"(
+            controller: "bookRest",
+            action: "delete"
+        )
 
 
         // =========================
@@ -24,6 +39,7 @@ class UrlMappings {
         // =========================
 
         "/$controller/$action?/$id?(.$format)?" {
+
             constraints {
                 // apply constraints here
             }
@@ -31,10 +47,18 @@ class UrlMappings {
 
 
         // =========================
-        // Default Pages
+        // Home Page
         // =========================
 
-        "/"(view: "/index")
+        "/"(
+            controller: "home",
+            action: "index"
+        )
+
+
+        // =========================
+        // Error Pages
+        // =========================
 
         "500"(view: '/error')
 
