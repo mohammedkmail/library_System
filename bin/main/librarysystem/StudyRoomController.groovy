@@ -9,14 +9,15 @@ class StudyRoomController {
     StudyRoomService studyRoomService
 
     static allowedMethods = [
-        save  : "POST",
-        update: "PUT",
-        delete: "DELETE"
+        save  : 'POST',
+        update: 'PUT',
+        delete: 'DELETE'
     ]
 
     def index(Integer max) {
 
-        params.max = Math.min(max ?: 10, 100)
+        params.max =
+            Math.min(max ?: 10, 100)
 
         respond studyRoomService.list(params),
             model: [
@@ -44,7 +45,7 @@ class StudyRoomController {
 
     def save(StudyRoom studyRoom) {
 
-        if (studyRoom == null) {
+        if (!studyRoom) {
             notFound()
             return
         }
@@ -86,7 +87,7 @@ class StudyRoomController {
 
     def update(StudyRoom studyRoom) {
 
-        if (studyRoom == null) {
+        if (!studyRoom) {
             notFound()
             return
         }
@@ -115,7 +116,7 @@ class StudyRoomController {
 
     def delete(Long id) {
 
-        if (id == null) {
+        if (!id) {
             notFound()
             return
         }
@@ -125,6 +126,28 @@ class StudyRoomController {
 
         if (!studyRoom) {
             notFound()
+            return
+        }
+
+        Long reservationCount =
+            RoomReservation.countByStudyRoom(
+                studyRoom
+            )
+
+        if (reservationCount > 0) {
+
+            studyRoom.active = false
+
+            studyRoomService.save(
+                studyRoom
+            )
+
+            flash.message =
+                'This study room has reservation history, so it was deactivated instead of deleted.'
+
+            redirect action: 'show',
+                     id: studyRoom.id
+
             return
         }
 

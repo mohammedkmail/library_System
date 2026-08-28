@@ -2,23 +2,26 @@
 <html>
 
 <head>
+
     <meta name="layout" content="main"/>
-    <title>Read ${book?.title}</title>
+
+    <title>
+        Read ${book?.title}
+    </title>
+
 </head>
 
 <body>
 
 <div class="digital-reader-page">
 
-    <!-- =========================
-         READER HEADER
-         ========================= -->
 
     <section class="reader-header">
 
         <div class="container">
 
             <div class="reader-header-inner">
+
 
                 <div class="reader-book-identity">
 
@@ -41,13 +44,16 @@
                         <span class="reader-label">
 
                             <i class="bi bi-shield-check"></i>
+
                             Protected Digital Reading
 
                         </span>
 
+
                         <h1>
                             ${book?.title}
                         </h1>
+
 
                         <p>
                             ${book?.author?.name}
@@ -58,13 +64,13 @@
                 </div>
 
 
-                <g:link
-                    controller="book"
-                    action="show"
-                    id="${book?.id}"
-                    class="btn reader-back-btn">
+                <g:link controller="book"
+                        action="show"
+                        id="${book?.id}"
+                        class="btn reader-back-btn">
 
                     <i class="bi bi-arrow-left me-2"></i>
+
                     Book Details
 
                 </g:link>
@@ -76,13 +82,11 @@
     </section>
 
 
-    <!-- =========================
-         READING AREA
-         ========================= -->
 
     <section class="reader-area">
 
         <div class="container">
+
 
             <div class="reader-toolbar">
 
@@ -108,7 +112,9 @@
             </div>
 
 
+
             <div class="reader-paper">
+
 
                 <div class="reader-paper-heading">
 
@@ -127,6 +133,7 @@
                 </div>
 
 
+
                 <div class="reader-divider">
 
                     <span></span>
@@ -138,13 +145,19 @@
                 </div>
 
 
+
                 <g:if test="${book?.digitalContent}">
 
                     <article class="reader-text">
+
                         ${book.digitalContent}
+
                     </article>
 
-                </g:if><g:else>
+                </g:if>
+
+
+                <g:else>
 
                     <div class="reader-empty">
 
@@ -154,18 +167,24 @@
 
                         </div>
 
+
                         <h3>
                             Content not available yet
                         </h3>
 
+
                         <p>
-                            Digital access is valid, but reading
-                            content has not been added to this book yet.
+
+                            Digital access is valid,
+                            but reading content has not
+                            been added to this book yet.
+
                         </p>
 
                     </div>
 
                 </g:else>
+
 
 
                 <div class="reader-end">
@@ -181,26 +200,27 @@
             </div>
 
 
+
             <div class="reader-footer-actions">
 
-                <g:link
-                    controller="book"
-                    action="show"
-                    id="${book?.id}"
-                    class="btn btn-outline-dark">
+                <g:link controller="book"
+                        action="show"
+                        id="${book?.id}"
+                        class="btn btn-outline-dark">
 
                     <i class="bi bi-arrow-left me-2"></i>
+
                     Back to Book
 
                 </g:link>
 
 
-                <g:link
-                    controller="digitalAccess"
-                    action="index"
-                    class="btn btn-primary">
+                <g:link controller="digitalAccess"
+                        action="index"
+                        class="btn btn-primary">
 
                     <i class="bi bi-collection me-2"></i>
+
                     My Digital Library
 
                 </g:link>
@@ -214,4 +234,5 @@
 </div>
 
 </body>
+
 </html>

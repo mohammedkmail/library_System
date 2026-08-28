@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta name="layout" content="main"/>
     <title>Membership Details</title>
@@ -7,101 +8,154 @@
 
 <body>
 
-<div class="container mt-4">
+<div class="container py-5">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Membership Details</h1>
+    <g:link action="index"
+            class="text-decoration-none d-inline-block mb-4">
+        ← Back to Memberships
+    </g:link>
 
-        <g:link action="index" class="btn btn-secondary">
-            Back to Memberships
-        </g:link>
-    </div>
+    <div class="row g-5">
 
-    <g:if test="${flash.message}">
-        <div class="alert alert-info">
-            ${flash.message}
-        </div>
-    </g:if>
+        <div class="col-lg-5">
 
-    <div class="card shadow-sm">
-
-        <div class="card-body">
-
-            <div class="row mb-3">
-                <div class="col-md-3 fw-bold">
-                    Start Date
-                </div>
-
-                <div class="col-md-9">
-                    <g:formatDate
-                        date="${membership?.startDate}"
-                        format="yyyy-MM-dd"/>
-                </div>
+            <div class="text-uppercase small fw-semibold text-muted mb-2">
+                Library Membership
             </div>
 
-            <div class="row mb-3">
-                <div class="col-md-3 fw-bold">
-                    End Date
-                </div>
+            <h1 class="display-6 fw-semibold mb-3">
+                Membership Details
+            </h1>
 
-                <div class="col-md-9">
-                    <g:formatDate
-                        date="${membership?.endDate}"
-                        format="yyyy-MM-dd"/>
-                </div>
-            </div>
+            <g:if test="${membership?.status == 'ACTIVE'}">
+                <span class="badge text-bg-success">
+                    ACTIVE
+                </span>
+            </g:if>
 
-            <div class="row mb-3">
-                <div class="col-md-3 fw-bold">
-                    Status
-                </div>
+            <g:elseif test="${membership?.status == 'EXPIRED'}">
+                <span class="badge text-bg-secondary">
+                    EXPIRED
+                </span>
+            </g:elseif>
 
-                <div class="col-md-9">
+            <g:else>
+                <span class="badge text-bg-dark">
                     ${membership?.status}
-                </div>
-            </div>
+                </span>
+            </g:else>
 
-            <div class="row mb-3">
-                <div class="col-md-3 fw-bold">
-                    Price
-                </div>
+            <g:if test="${membership?.status == 'ACTIVE'}">
 
-                <div class="col-md-9">
-                    ${membership?.price}
-                </div>
-            </div>
+                <p class="text-muted mt-4">
+                    This membership can currently be used
+                    for physical borrowing and book
+                    reservations.
+                </p>
 
-            <sec:ifAnyGranted roles="ROLE_ADMIN">
-
-                <div class="row mb-3">
-                    <div class="col-md-3 fw-bold">
-                        User
-                    </div>
-
-                    <div class="col-md-9">
-                        ${membership?.user?.username}
-                    </div>
-                </div>
-
-            </sec:ifAnyGranted>
+            </g:if>
 
         </div>
 
-        <g:if test="${membership?.status == 'ACTIVE'}">
+        <div class="col-lg-7">
 
-            <div class="card-footer">
+            <div class="border-top">
 
-                <g:link
-                    action="cancel"
-                    id="${membership?.id}"
-                    class="btn btn-outline-danger"
-                    onclick="return confirm('Are you sure you want to cancel this membership?');">
-                    Cancel Membership
-                </g:link>
+                <sec:ifAnyGranted roles="ROLE_ADMIN">
+
+                    <div class="row py-3 border-bottom">
+
+                        <div class="col-sm-4 text-muted">
+                            Member
+                        </div>
+
+                        <div class="col-sm-8 fw-semibold">
+                            ${membership?.user?.username}
+                        </div>
+
+                    </div>
+
+                </sec:ifAnyGranted>
+
+                <div class="row py-3 border-bottom">
+
+                    <div class="col-sm-4 text-muted">
+                        Start Date
+                    </div>
+
+                    <div class="col-sm-8">
+                        <g:formatDate
+                            date="${membership?.startDate}"
+                            format="MMMM d, yyyy"/>
+                    </div>
+
+                </div>
+
+                <div class="row py-3 border-bottom">
+
+                    <div class="col-sm-4 text-muted">
+                        End Date
+                    </div>
+
+                    <div class="col-sm-8">
+                        <g:formatDate
+                            date="${membership?.endDate}"
+                            format="MMMM d, yyyy"/>
+                    </div>
+
+                </div>
+
+                <div class="row py-3 border-bottom">
+
+                    <div class="col-sm-4 text-muted">
+                        Status
+                    </div>
+
+                    <div class="col-sm-8 fw-semibold">
+                        ${membership?.status}
+                    </div>
+
+                </div>
+
+                <div class="row py-3 border-bottom">
+
+                    <div class="col-sm-4 text-muted">
+                        Total Price
+                    </div>
+
+                    <div class="col-sm-8 fw-semibold">
+                        $<g:formatNumber
+                            number="${membership?.price ?: 0}"
+                            minFractionDigits="2"
+                            maxFractionDigits="2"/>
+                    </div>
+
+                </div>
 
             </div>
 
-        </g:if>
+            <g:if test="${membership?.status == 'ACTIVE'}">
+
+                <div class="mt-4">
+
+                    <g:form controller="membership"
+                            action="cancel"
+                            id="${membership.id}"
+                            method="POST">
+
+                        <button type="submit"
+                                class="btn btn-outline-danger"
+                                onclick="return confirm('Are you sure you want to cancel this membership?');">
+                            Cancel Membership
+                        </button>
+
+                    </g:form>
+
+                </div>
+
+            </g:if>
+
+        </div>
 
     </div>
 

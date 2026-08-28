@@ -9,35 +9,77 @@ class BorrowingController {
     SpringSecurityService springSecurityService
     BorrowingService borrowingService
 
+    static allowedMethods = [
+        borrow    : 'POST',
+        returnBook: 'POST'
+    ]
+
     def index() {
+
+        borrowingService.updateOverdueBorrowings()
 
         User currentUser =
             springSecurityService.currentUser as User
 
-        List<Borrowing> borrowings
+        boolean admin =
+            isAdmin(currentUser)
 
-        if (isAdmin(currentUser)) {
+        List<Borrowing> borrowingList
 
-            borrowings = Borrowing.list(
-                sort: 'borrowDate',
-                order: 'desc'
-            )
+        List<User> userList = []
+        List<BookCopy> availableCopyList = []
+
+        if (admin) {
+
+            borrowingList =
+                Borrowing.list(
+                    sort: 'borrowDate',
+                    order: 'desc'
+                )
+
+            userList =
+                User.list(
+                    sort: 'username',
+                    order: 'asc'
+                ).findAll { User user ->
+
+                    user.authorities
+                        *.authority
+                        .contains('ROLE_USER')
+                }
+
+            availableCopyList =
+                BookCopy.findAllByStatus(
+                    'AVAILABLE',
+                    [
+                        sort : 'copyCode',
+                        order: 'asc'
+                    ]
+                )
 
         } else {
 
-            borrowings = Borrowing.findAllByUser(
-                currentUser,
-                [
-                    sort : 'borrowDate',
-                    order: 'desc'
-                ]
-            )
+            borrowingList =
+                Borrowing.findAllByUser(
+                    currentUser,
+                    [
+                        sort : 'borrowDate',
+                        order: 'desc'
+                    ]
+                )
         }
 
-        respond borrowings
+        respond borrowingList,
+            model: [
+                isAdmin          : admin,
+                userList         : userList,
+                availableCopyList: availableCopyList
+            ]
     }
 
     def show(Long id) {
+
+        borrowingService.updateOverdueBorrowings()
 
         Borrowing borrowing =
             borrowingService.get(id)
@@ -58,20 +100,39 @@ class BorrowingController {
             return
         }
 
-        respond borrowing
+        respond borrowing,
+            model: [
+                isAdmin: isAdmin(currentUser)
+            ]
     }
 
-    def borrow(Long bookCopyId) {
+    @Secured(['ROLE_ADMIN'])
+    def borrow(
+        Long userId,
+        Long bookCopyId
+    ) {
 
-        User currentUser =
-            springSecurityService.currentUser as User
+        User borrower =
+            User.get(userId)
 
         BookCopy bookCopy =
             BookCopy.get(bookCopyId)
 
+        if (!borrower) {
+
+            flash.message =
+                'User not found.'
+
+            redirect action: 'index'
+            return
+        }
+
         if (!bookCopy) {
-            flash.message = 'Book copy not found.'
-            redirect controller: 'book', action: 'index'
+
+            flash.message =
+                'Book copy not found.'
+
+            redirect action: 'index'
             return
         }
 
@@ -79,69 +140,63 @@ class BorrowingController {
 
             Borrowing borrowing =
                 borrowingService.borrowBook(
-                    currentUser,
+                    borrower,
                     bookCopy
                 )
 
             flash.message =
                 'Book borrowed successfully.'
 
-            redirect action: 'show', id: borrowing.id
+            redirect action: 'show',
+                     id: borrowing.id
 
         } catch (
             IllegalArgumentException |
             IllegalStateException e
         ) {
 
-            flash.message = e.message
+            flash.message =
+                e.message
 
-            redirect controller: 'book',
-                     action: 'show',
-                     id: bookCopy.book?.id
+            redirect action: 'index'
         }
     }
 
+    @Secured(['ROLE_ADMIN'])
     def returnBook(Long id) {
-
-        Borrowing borrowing =
-            borrowingService.get(id)
-
-        if (!borrowing) {
-            notFound()
-            return
-        }
-
-        User currentUser =
-            springSecurityService.currentUser as User
-
-        if (
-            !isAdmin(currentUser) &&
-            borrowing.user.id != currentUser.id
-        ) {
-            render status: 403
-            return
-        }
 
         try {
 
-            borrowingService.returnBook(id)
+            Borrowing borrowing =
+                borrowingService.returnBook(id)
+
+            if (!borrowing) {
+                notFound()
+                return
+            }
 
             flash.message =
                 'Book returned successfully.'
 
-            redirect action: 'index'
+            redirect action: 'show',
+                     id: borrowing.id
 
-        } catch (IllegalStateException e) {
+        } catch (
+            IllegalStateException e
+        ) {
 
-            flash.message = e.message
+            flash.message =
+                e.message
 
-            redirect action: 'show', id: id
+            redirect action: 'show',
+                     id: id
         }
     }
 
     private boolean isAdmin(User user) {
 
-        user.authorities*.authority
+        user?.authorities
+            *.authority
             .contains('ROLE_ADMIN')
     }
 

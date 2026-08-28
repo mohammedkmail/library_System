@@ -38,6 +38,12 @@ class PurchaseService {
             )
         }
 
+        if (book.active != true) {
+            throw new IllegalStateException(
+                'This book is not currently available.'
+            )
+        }
+
         if (!(purchaseType in ['PHYSICAL', 'DIGITAL'])) {
             throw new IllegalArgumentException(
                 'Invalid purchase type.'
@@ -54,19 +60,23 @@ class PurchaseService {
 
         if (purchaseType == 'PHYSICAL') {
 
-            if (book.physicalSaleStock < quantity) {
-                throw new IllegalStateException(
-                    'Not enough physical copies in stock.'
-                )
-            }
-
             if (book.physicalSalePrice == null) {
                 throw new IllegalStateException(
                     'Physical purchase is not available for this book.'
                 )
             }
 
-            unitPrice = book.physicalSalePrice
+            Integer currentStock =
+                book.physicalSaleStock ?: 0
+
+            if (currentStock < quantity) {
+                throw new IllegalStateException(
+                    'Not enough physical copies in stock.'
+                )
+            }
+
+            unitPrice =
+                book.physicalSalePrice
 
         } else {
 
@@ -82,25 +92,50 @@ class PurchaseService {
                 )
             }
 
-            // Digital purchase is one access license
+            Purchase existingPurchase =
+                Purchase.findByUserAndBookAndPurchaseTypeAndStatus(
+                    user,
+                    book,
+                    'DIGITAL',
+                    'COMPLETED'
+                )
+
+            DigitalAccess existingAccess =
+                DigitalAccess.findByUserAndBookAndAccessTypeAndStatus(
+                    user,
+                    book,
+                    'PURCHASE',
+                    'ACTIVE'
+                )
+
+            if (existingPurchase || existingAccess) {
+                throw new IllegalStateException(
+                    'You already own the digital version of this book.'
+                )
+            }
+
             quantity = 1
 
-            unitPrice = book.digitalPurchasePrice
+            unitPrice =
+                book.digitalPurchasePrice
         }
 
         BigDecimal totalAmount =
-            unitPrice * quantity
+            unitPrice.multiply(
+                BigDecimal.valueOf(quantity)
+            )
 
-        Purchase purchase = new Purchase(
-            user: user,
-            book: book,
-            purchaseType: purchaseType,
-            quantity: quantity,
-            unitPrice: unitPrice,
-            totalAmount: totalAmount,
-            purchaseDate: new Date(),
-            status: 'COMPLETED'
-        )
+        Purchase purchase =
+            new Purchase(
+                user: user,
+                book: book,
+                purchaseType: purchaseType,
+                quantity: quantity,
+                unitPrice: unitPrice,
+                totalAmount: totalAmount,
+                purchaseDate: new Date(),
+                status: 'COMPLETED'
+            )
 
         purchase.save(
             flush: true,
@@ -109,35 +144,42 @@ class PurchaseService {
 
         if (purchaseType == 'PHYSICAL') {
 
-             book.physicalSaleStock -= quantity
+            book.physicalSaleStock =
+                (book.physicalSaleStock ?: 0) -
+                quantity
 
-             book.save(
+            book.save(
                 flush: true,
                 failOnError: true
-              )
+            )
 
-            } else if (purchaseType == 'DIGITAL') {
+        } else {
 
-              digitalAccessService.grantPurchaseAccess(user,book)
-}
+            digitalAccessService
+                .grantPurchaseAccess(
+                    user,
+                    book
+                )
+        }
 
-
-
-purchase
-
+        purchase
     }
 
     BigDecimal totalSales() {
 
         List<Purchase> purchases =
-            Purchase.findAllByStatus('COMPLETED')
+            Purchase.findAllByStatus(
+                'COMPLETED'
+            )
 
         purchases.sum {
-            it.totalAmount ?: 0.0
-        } ?: 0.0
+            it.totalAmount ?: BigDecimal.ZERO
+        } ?: BigDecimal.ZERO
     }
 
     Long countCompletedPurchases() {
-        Purchase.countByStatus('COMPLETED')
+        Purchase.countByStatus(
+            'COMPLETED'
+        )
     }
 }

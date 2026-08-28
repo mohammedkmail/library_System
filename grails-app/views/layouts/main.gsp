@@ -1,12 +1,18 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+    <meta http-equiv="Content-Type"
+          content="text/html; charset=UTF-8"/>
+
+    <meta http-equiv="X-UA-Compatible"
+          content="IE=edge"/>
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1"/>
 
     <title>
-        <g:layoutTitle default="Library System"/>
+        <g:layoutTitle default="Smart Library"/>
     </title>
 
     <asset:link rel="icon"
@@ -16,30 +22,31 @@
     <asset:stylesheet src="application.css"/>
 
     <g:layoutHead/>
+
 </head>
 
 <body>
 
-<!-- ==================== NAVBAR ==================== -->
+<!-- =====================================================
+     NAVIGATION
+===================================================== -->
+
 <nav class="navbar navbar-expand-lg navbar-dark library-navbar sticky-top">
 
     <div class="container">
 
         <!-- Brand -->
-        <a class="navbar-brand d-flex align-items-center gap-2"
+        <a class="navbar-brand"
            href="${createLink(uri: '/')}">
 
-            <span class="brand-icon">
-                <i class="bi bi-book-half"></i>
-            </span>
-
-            <span>
+            <span class="library-brand-name">
                 Smart<span class="brand-highlight">Library</span>
             </span>
 
         </a>
 
-        <!-- Mobile button -->
+
+        <!-- Mobile Toggle -->
         <button class="navbar-toggler"
                 type="button"
                 data-bs-toggle="collapse"
@@ -52,20 +59,28 @@
 
         </button>
 
-        <div class="collapse navbar-collapse" id="mainNavbar">
 
-            <!-- LEFT SIDE -->
+        <div class="collapse navbar-collapse"
+             id="mainNavbar">
+
+
+            <!-- =================================================
+                 MAIN PUBLIC NAVIGATION
+            ================================================== -->
+
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
                 <li class="nav-item">
+
                     <a class="nav-link"
                        href="${createLink(uri: '/')}">
 
-                        <i class="bi bi-house-door me-1"></i>
                         Home
 
                     </a>
+
                 </li>
+
 
                 <li class="nav-item">
 
@@ -73,7 +88,6 @@
                             action="index"
                             class="nav-link">
 
-                        <i class="bi bi-bookshelf me-1"></i>
                         Books
 
                     </g:link>
@@ -81,7 +95,36 @@
                 </li>
 
 
-                <!-- LOGGED IN USER -->
+                <li class="nav-item">
+
+                    <g:link controller="category"
+                            action="index"
+                            class="nav-link">
+
+                        Categories
+
+                    </g:link>
+
+                </li>
+
+
+                <li class="nav-item">
+
+                    <g:link controller="author"
+                            action="index"
+                            class="nav-link">
+
+                        Authors
+
+                    </g:link>
+
+                </li>
+
+
+                <!-- =================================================
+                     LOGGED-IN AREA
+                ================================================== -->
+
                 <sec:ifLoggedIn>
 
                     <li class="nav-item">
@@ -90,15 +133,21 @@
                                 action="index"
                                 class="nav-link">
 
-                            <i class="bi bi-grid me-1"></i>
                             Dashboard
 
                         </g:link>
 
                     </li>
 
+                </sec:ifLoggedIn>
 
-                    <!-- MY LIBRARY -->
+
+                <!-- =================================================
+                     USER LIBRARY
+                ================================================== -->
+
+                <sec:ifAnyGranted roles="ROLE_USER">
+
                     <li class="nav-item dropdown">
 
                         <a class="nav-link dropdown-toggle"
@@ -108,107 +157,141 @@
                            data-bs-toggle="dropdown"
                            aria-expanded="false">
 
-                            <i class="bi bi-collection me-1"></i>
                             My Library
 
                         </a>
 
+
                         <ul class="dropdown-menu library-dropdown"
                             aria-labelledby="myLibraryDropdown">
 
+
                             <li class="dropdown-header">
-                                Library Activity
+                                Account
                             </li>
 
+
                             <li>
+
                                 <g:link controller="membership"
                                         action="index"
                                         class="dropdown-item">
 
-                                    <i class="bi bi-person-badge me-2"></i>
-                                    Memberships
+                                    Membership
 
                                 </g:link>
+
                             </li>
 
-                            <li>
-                                <g:link controller="borrowing"
-                                        action="index"
-                                        class="dropdown-item">
-
-                                    <i class="bi bi-arrow-left-right me-2"></i>
-                                    Borrowings
-
-                                </g:link>
-                            </li>
-
-                            <li>
-                                <g:link controller="reservation"
-                                        action="index"
-                                        class="dropdown-item">
-
-                                    <i class="bi bi-bookmark me-2"></i>
-                                    Book Reservations
-
-                                </g:link>
-                            </li>
-
-                            <li>
-                                <g:link controller="purchase"
-                                        action="index"
-                                        class="dropdown-item">
-
-                                    <i class="bi bi-bag me-2"></i>
-                                    Purchases
-
-                                </g:link>
-                            </li>
-
-                            <li>
-                                <g:link controller="digitalAccess"
-                                        action="index"
-                                        class="dropdown-item">
-
-                                    <i class="bi bi-tablet me-2"></i>
-                                    Digital Books
-
-                                </g:link>
-                            </li>
 
                             <li>
                                 <hr class="dropdown-divider"/>
                             </li>
 
+
+                            <li class="dropdown-header">
+                                Books
+                            </li>
+
+
                             <li>
-                                <g:link controller="roomReservation"
+
+                                <g:link controller="borrowing"
                                         action="index"
                                         class="dropdown-item">
 
-                                    <i class="bi bi-calendar-check me-2"></i>
-                                    Room Reservations
+                                    My Borrowings
 
                                 </g:link>
+
                             </li>
 
+
                             <li>
+
+                                <g:link controller="reservation"
+                                        action="index"
+                                        class="dropdown-item">
+
+                                    Book Reservations
+
+                                </g:link>
+
+                            </li>
+
+
+                            <li>
+
+                                <g:link controller="purchase"
+                                        action="index"
+                                        class="dropdown-item">
+
+                                    My Purchases
+
+                                </g:link>
+
+                            </li>
+
+
+                            <li>
+
+                                <g:link controller="digitalAccess"
+                                        action="index"
+                                        class="dropdown-item">
+
+                                    Digital Library
+
+                                </g:link>
+
+                            </li>
+
+
+                            <li>
+                                <hr class="dropdown-divider"/>
+                            </li>
+
+
+                            <li class="dropdown-header">
+                                Study Rooms
+                            </li>
+
+
+                            <li>
+
                                 <g:link controller="roomReservation"
                                         action="create"
                                         class="dropdown-item">
 
-                                    <i class="bi bi-plus-circle me-2"></i>
-                                    Reserve Study Room
+                                    Reserve a Room
 
                                 </g:link>
+
+                            </li>
+
+
+                            <li>
+
+                                <g:link controller="roomReservation"
+                                        action="index"
+                                        class="dropdown-item">
+
+                                    My Room Reservations
+
+                                </g:link>
+
                             </li>
 
                         </ul>
 
                     </li>
 
-                </sec:ifLoggedIn>
+                </sec:ifAnyGranted>
 
 
-                <!-- ADMIN -->
+                <!-- =================================================
+                     ADMIN MANAGEMENT
+                ================================================== -->
+
                 <sec:ifAnyGranted roles="ROLE_ADMIN">
 
                     <li class="nav-item dropdown">
@@ -220,145 +303,198 @@
                            data-bs-toggle="dropdown"
                            aria-expanded="false">
 
-                            <i class="bi bi-gear me-1"></i>
-                            Manage
+                            Administration
 
                         </a>
 
+
                         <ul class="dropdown-menu library-dropdown"
                             aria-labelledby="adminDropdown">
+
+
+                            <!-- CATALOG -->
 
                             <li class="dropdown-header">
                                 Catalog
                             </li>
 
+
                             <li>
+
                                 <g:link controller="book"
                                         action="index"
                                         class="dropdown-item">
 
-                                    <i class="bi bi-book me-2"></i>
                                     Books
 
                                 </g:link>
+
                             </li>
 
+
                             <li>
+
                                 <g:link controller="book"
                                         action="create"
                                         class="dropdown-item">
 
-                                    <i class="bi bi-plus-circle me-2"></i>
                                     Add Book
 
                                 </g:link>
+
                             </li>
 
+
                             <li>
+
                                 <g:link controller="author"
                                         action="index"
                                         class="dropdown-item">
 
-                                    <i class="bi bi-person me-2"></i>
                                     Authors
 
                                 </g:link>
+
                             </li>
 
+
                             <li>
+
                                 <g:link controller="category"
                                         action="index"
                                         class="dropdown-item">
 
-                                    <i class="bi bi-tags me-2"></i>
                                     Categories
 
                                 </g:link>
+
                             </li>
 
+
                             <li>
+
                                 <g:link controller="bookCopy"
                                         action="index"
                                         class="dropdown-item">
 
-                                    <i class="bi bi-copy me-2"></i>
                                     Book Copies
 
                                 </g:link>
+
                             </li>
+
 
                             <li>
                                 <hr class="dropdown-divider"/>
                             </li>
 
+
+                            <!-- CIRCULATION -->
+
                             <li class="dropdown-header">
-                                Library Management
+                                Circulation
                             </li>
 
-                            <li>
-                                <g:link controller="studyRoom"
-                                        action="index"
-                                        class="dropdown-item">
-
-                                    <i class="bi bi-door-open me-2"></i>
-                                    Study Rooms
-
-                                </g:link>
-                            </li>
 
                             <li>
+
                                 <g:link controller="borrowing"
                                         action="index"
                                         class="dropdown-item">
 
-                                    <i class="bi bi-arrow-left-right me-2"></i>
-                                    All Borrowings
+                                    Borrowings
 
                                 </g:link>
+
                             </li>
 
+
                             <li>
+
                                 <g:link controller="reservation"
                                         action="index"
                                         class="dropdown-item">
 
-                                    <i class="bi bi-bookmark me-2"></i>
-                                    All Reservations
+                                    Book Reservations
 
                                 </g:link>
+
                             </li>
 
+
                             <li>
+                                <hr class="dropdown-divider"/>
+                            </li>
+
+
+                            <!-- SALES / MEMBERS -->
+
+                            <li class="dropdown-header">
+                                Accounts & Sales
+                            </li>
+
+
+                            <li>
+
                                 <g:link controller="purchase"
                                         action="index"
                                         class="dropdown-item">
 
-                                    <i class="bi bi-bag me-2"></i>
-                                    All Purchases
+                                    Purchases
 
                                 </g:link>
+
                             </li>
 
+
                             <li>
+
                                 <g:link controller="membership"
                                         action="index"
                                         class="dropdown-item">
 
-                                    <i class="bi bi-people me-2"></i>
-                                    All Memberships
+                                    Memberships
 
                                 </g:link>
+
                             </li>
 
+
                             <li>
+                                <hr class="dropdown-divider"/>
+                            </li>
+
+
+                            <!-- ROOMS -->
+
+                            <li class="dropdown-header">
+                                Study Rooms
+                            </li>
+
+
+                            <li>
+
+                                <g:link controller="studyRoom"
+                                        action="index"
+                                        class="dropdown-item">
+
+                                    Manage Rooms
+
+                                </g:link>
+
+                            </li>
+
+
+                            <li>
+
                                 <g:link controller="roomReservation"
                                         action="index"
                                         class="dropdown-item">
 
-                                    <i class="bi bi-calendar3 me-2"></i>
-                                    All Room Reservations
+                                    Room Reservations
 
                                 </g:link>
+
                             </li>
 
                         </ul>
@@ -370,7 +506,10 @@
             </ul>
 
 
-            <!-- RIGHT SIDE -->
+            <!-- =================================================
+                 ACCOUNT
+            ================================================== -->
+
             <ul class="navbar-nav ms-auto align-items-lg-center">
 
                 <sec:ifLoggedIn>
@@ -384,12 +523,15 @@
                             </span>
 
                             <span class="d-none d-xl-inline">
+
                                 <sec:loggedInUserInfo field="username"/>
+
                             </span>
 
                         </span>
 
                     </li>
+
 
                     <li class="nav-item ms-lg-2">
 
@@ -400,7 +542,6 @@
                             <button type="submit"
                                     class="btn btn-outline-light btn-sm logout-btn">
 
-                                <i class="bi bi-box-arrow-right me-1"></i>
                                 Logout
 
                             </button>
@@ -420,7 +561,6 @@
                                 action="auth"
                                 class="btn btn-light login-btn">
 
-                            <i class="bi bi-person me-1"></i>
                             Login
 
                         </g:link>
@@ -438,38 +578,67 @@
 </nav>
 
 
-<!-- ==================== PAGE CONTENT ==================== -->
+
+<!-- =====================================================
+     PAGE CONTENT
+===================================================== -->
+
 <main class="library-main">
+
+    <g:if test="${flash.message}">
+
+        <div class="container pt-3">
+
+            <div class="alert alert-info alert-dismissible fade show"
+                 role="alert">
+
+                ${flash.message}
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close">
+                </button>
+
+            </div>
+
+        </div>
+
+    </g:if>
 
     <g:layoutBody/>
 
 </main>
 
 
-<!-- ==================== FOOTER ==================== -->
+
+<!-- =====================================================
+     FOOTER
+===================================================== -->
+
 <footer class="library-footer">
 
     <div class="container">
 
-        <div class="row align-items-center gy-4">
+        <div class="row align-items-end gy-4">
 
-            <div class="col-md-6">
+            <div class="col-md-7">
 
                 <div class="footer-brand">
-
-                    <i class="bi bi-book-half me-2"></i>
                     Smart Library
-
                 </div>
 
                 <p class="footer-description mb-0">
-                    A modern hybrid library management system for
-                    physical and digital resources.
+
+                    Physical collections, digital reading
+                    and study spaces in one library experience.
+
                 </p>
 
             </div>
 
-            <div class="col-md-6 text-md-end">
+
+            <div class="col-md-5 text-md-end">
 
                 <p class="mb-1">
                     UBS Java Intern Training Project
@@ -488,7 +657,11 @@
 </footer>
 
 
-<!-- Loading Spinner -->
+
+<!-- =====================================================
+     LOADING INDICATOR
+===================================================== -->
+
 <div id="spinner"
      class="position-fixed top-0 end-0 p-3"
      style="display:none; z-index:2000;">

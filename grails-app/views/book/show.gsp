@@ -10,136 +10,98 @@
 
 <div class="book-detail-page">
 
-    <div class="container">
+    <div class="container py-5">
 
-        <!-- =========================
-             BREADCRUMB / BACK
-             ========================= -->
+        <g:link
+            controller="book"
+            action="index"
+            class="back-link">
 
-        <div class="book-detail-topbar">
+            ← Back to collection
 
-            <g:link
-                controller="book"
-                action="index"
-                class="book-back-link">
-
-                <i class="bi bi-arrow-left"></i>
-                Back to collection
-
-            </g:link>
-
-        </div>
+        </g:link>
 
 
-        <g:if test="${flash.message}">
-
-            <div class="alert alert-info mb-4">
-
-                <i class="bi bi-info-circle me-2"></i>
-                ${flash.message}
-
-            </div>
-
-        </g:if>
+        <div class="row g-5 mt-1">
 
 
-        <!-- =========================
-             MAIN BOOK AREA
-             ========================= -->
+            <!-- =========================
+                 COVER / AVAILABILITY
+                 ========================= -->
 
-        <div class="row g-5">
-
-            <!-- COVER -->
             <div class="col-lg-4">
 
-                <div class="book-detail-cover-panel">
+                <div class="book-detail-cover">
 
-                    <div class="book-detail-cover">
+                    <g:if test="${book?.coverData}">
 
-                        <g:if test="${book?.coverData}">
+                        <img
+                            src="${createLink(
+                                controller: 'book',
+                                action: 'cover',
+                                id: book.id
+                            )}"
+                            alt="${book.title}"
+                            class="book-cover-image"
+                        />
 
-                            <img
-                                src="${createLink(
-                                    controller: 'book',
-                                    action: 'cover',
-                                    id: book.id
-                                )}"
-                                alt="${book?.title}"/>
+                    </g:if>
 
-                        </g:if><g:else>
+                    <g:else>
 
-                            <div class="book-detail-no-cover">
+                        <div class="book-cover-placeholder">
 
-                                <i class="bi bi-book"></i>
-
-                                <span>
-                                    No Cover Available
-                                </span>
-
-                            </div>
-
-                        </g:else>
-
-
-                        <g:if test="${book?.digitalAvailable}">
-
-                            <span class="book-detail-digital-badge">
-
-                                <i class="bi bi-tablet"></i>
-                                Digital Edition
-
+                            <span>
+                                ${book?.title}
                             </span>
 
-                        </g:if>
+                        </div>
+
+                    </g:else>
+
+                </div>
+
+
+                <div class="border-top mt-4">
+
+                    <div class="d-flex justify-content-between
+                                py-3 border-bottom">
+
+                        <span class="text-muted">
+                            Lending copies
+                        </span>
+
+                        <strong>
+                            ${physicalCopyCount ?: 0}
+                        </strong>
 
                     </div>
 
 
-                    <!-- QUICK AVAILABILITY -->
-                    <div class="book-availability-box">
+                    <div class="d-flex justify-content-between
+                                py-3 border-bottom">
 
-                        <div class="availability-row">
+                        <span class="text-muted">
+                            Available now
+                        </span>
 
-                            <span>
-                                <i class="bi bi-bag"></i>
-                                Physical stock
-                            </span>
+                        <strong>
+                            ${availableCopies?.size() ?: 0}
+                        </strong>
 
-                            <strong>
-                                ${book?.physicalSaleStock ?: 0}
-                            </strong>
-
-                        </div>
+                    </div>
 
 
-                        <div class="availability-row">
+                    <div class="d-flex justify-content-between
+                                py-3 border-bottom">
 
-                            <span>
-                                <i class="bi bi-book"></i>
-                                Borrowing copies
-                            </span>
+                        <span class="text-muted">
+                            Physical sale stock
+                        </span>
 
-                            <strong>
-                                ${availableCopies?.size() ?: 0}
-                            </strong>
-
-                        </div>
-
-
-                        <div class="availability-row">
-
-                            <span>
-                                <i class="bi bi-tablet"></i>
-                                Digital edition
-                            </span>
-
-                            <strong class="${book?.digitalAvailable ? 'text-success' : 'text-muted'}">
-
-                                ${book?.digitalAvailable ? 'Available' : 'Unavailable'}
-
-                            </strong>
-
-                        </div>
+                        <strong>
+                            ${book?.physicalSaleStock ?: 0}
+                        </strong>
 
                     </div>
 
@@ -148,262 +110,273 @@
             </div>
 
 
-            <!-- DETAILS -->
+
+            <!-- =========================
+                 BOOK INFORMATION
+                 ========================= -->
+
             <div class="col-lg-8">
 
-                <div class="book-detail-content">
+                <div class="section-eyebrow">
 
-                    <div class="book-detail-category">
-                        ${book?.category?.name}
-                    </div>
+                    ${book?.category?.name}
 
-
-                    <h1>
-                        ${book?.title}
-                    </h1>
+                </div>
 
 
-                    <div class="book-detail-author">
+                <h1 class="display-5 fw-semibold mb-2">
 
-                        by
+                    ${book?.title}
 
-                        <span>
-                            ${book?.author?.name}
+                </h1>
+
+
+                <p class="lead text-muted">
+
+                    by
+
+                    <g:link
+                        controller="author"
+                        action="show"
+                        id="${book?.author?.id}"
+                        class="text-decoration-none">
+
+                        ${book?.author?.name}
+
+                    </g:link>
+
+                </p>
+
+
+
+                <!-- BADGES -->
+
+                <div class="d-flex flex-wrap gap-2 my-4">
+
+                    <g:if test="${book?.digitalAvailable}">
+
+                        <span class="status-badge">
+                            Digital Edition
                         </span>
 
-                    </div>
+                    </g:if>
 
 
-                    <!-- BADGES -->
-                    <div class="book-detail-badges">
+                    <g:if test="${book?.membershipIncluded}">
 
-                        <g:if test="${book?.digitalAvailable}">
+                        <span class="status-badge">
+                            Membership Included
+                        </span>
 
-                            <span class="detail-badge">
-
-                                <i class="bi bi-tablet"></i>
-                                Digital
-
-                            </span>
-
-                        </g:if>
+                    </g:if>
 
 
-                        <g:if test="${book?.membershipIncluded}">
+                    <g:if test="${availableCopies}">
 
-                            <span class="detail-badge membership">
+                        <span class="status-badge status-active">
+                            Lending Copy Available
+                        </span>
 
-                                <i class="bi bi-person-badge"></i>
-                                Membership Included
-
-                            </span>
-
-                        </g:if>
+                    </g:if>
 
 
-                        <g:if test="${availableCopies}">
+                    <g:if test="${isAdmin && !book?.active}">
 
-                            <span class="detail-badge available">
+                        <span class="status-badge status-inactive">
+                            Inactive
+                        </span>
 
-                                <i class="bi bi-check-circle"></i>
-                                Borrowing Available
+                    </g:if>
 
-                            </span>
-
-                        </g:if>
-
-                    </div>
+                </div>
 
 
-                    <!-- DESCRIPTION -->
-                    <div class="book-description">
 
-                        <h5>About this book</h5>
+                <!-- DESCRIPTION -->
 
-                        <p>
-                            ${book?.description ?: 'No description has been added for this book.'}
-                        </p>
+                <div class="book-description mb-5">
 
-                    </div>
+                    <h2 class="h5">
+                        About this book
+                    </h2>
+
+                    <p class="text-muted">
+
+                        ${book?.description ?:
+                            'No description has been added for this book.'}
+
+                    </p>
+
+                </div>
 
 
-                    <!-- META -->
-                    <div class="book-meta-grid">
 
-                        <div class="book-meta-item">
+                <!-- META -->
 
-                            <span class="meta-label">
-                                ISBN
-                            </span>
+                <div class="row g-3 mb-5">
 
-                            <strong>
-                                ${book?.isbn}
-                            </strong>
+                    <div class="col-sm-4">
 
+                        <div class="small text-muted">
+                            ISBN
                         </div>
 
-
-                        <div class="book-meta-item">
-
-                            <span class="meta-label">
-                                Published
-                            </span>
-
-                            <strong>
-                                ${book?.publishYear ?: '-'}
-                            </strong>
-
-                        </div>
-
-
-                        <div class="book-meta-item">
-
-                            <span class="meta-label">
-                                Category
-                            </span>
-
-                            <strong>
-                                ${book?.category?.name}
-                            </strong>
-
-                        </div>
-
-
-                        <div class="book-meta-item">
-
-                            <span class="meta-label">
-                                Status
-                            </span>
-
-                            <strong>
-                                ${book?.active ? 'Active' : 'Inactive'}
-                            </strong>
-
-                        </div>
+                        <strong>
+                            ${book?.isbn ?: '—'}
+                        </strong>
 
                     </div>
 
 
-                    <!-- =========================
-                         PRICES
-                         ========================= -->
+                    <div class="col-sm-4">
 
-                    <div class="book-pricing">
+                        <div class="small text-muted">
+                            Published
+                        </div>
 
-                        <g:if test="${book?.physicalSalePrice != null}">
+                        <strong>
+                            ${book?.publishYear ?: '—'}
+                        </strong>
 
-                            <div class="price-card">
+                    </div>
 
-                                <span class="price-type">
-                                    Physical
-                                </span>
 
-                                <strong>
-                                    ${book.physicalSalePrice}
-                                </strong>
+                    <div class="col-sm-4">
 
-                                <small>
-                                    One-time purchase
-                                </small>
+                        <div class="small text-muted">
+                            Category
+                        </div>
+
+                        <strong>
+                            ${book?.category?.name ?: '—'}
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- =========================
+                     PRICES
+                     ========================= -->
+
+                <div class="border-top mb-5">
+
+                    <g:if test="${book?.physicalSalePrice != null}">
+
+                        <div class="row py-3 border-bottom">
+
+                            <div class="col">
+                                Physical purchase
+                            </div>
+
+                            <div class="col-auto fw-semibold">
+
+                                $<g:formatNumber
+                                    number="${book.physicalSalePrice}"
+                                    minFractionDigits="2"
+                                    maxFractionDigits="2"
+                                />
 
                             </div>
 
-                        </g:if>
+                        </div>
+
+                    </g:if>
 
 
-                        <g:if test="${book?.digitalPurchasePrice != null}">
+                    <g:if test="${book?.digitalAvailable &&
+                                  book?.digitalPurchasePrice != null}">
 
-                            <div class="price-card">
+                        <div class="row py-3 border-bottom">
 
-                                <span class="price-type">
-                                    Digital
-                                </span>
+                            <div class="col">
+                                Permanent digital purchase
+                            </div>
 
-                                <strong>
-                                    ${book.digitalPurchasePrice}
-                                </strong>
+                            <div class="col-auto fw-semibold">
 
-                                <small>
-                                    Permanent access
-                                </small>
+                                $<g:formatNumber
+                                    number="${book.digitalPurchasePrice}"
+                                    minFractionDigits="2"
+                                    maxFractionDigits="2"
+                                />
 
                             </div>
 
-                        </g:if>
+                        </div>
+
+                    </g:if>
 
 
-                        <g:if test="${book?.digitalRentalPrice != null}">
+                    <g:if test="${book?.digitalAvailable &&
+                                  book?.digitalRentalPrice != null}">
 
-                            <div class="price-card">
+                        <div class="row py-3 border-bottom">
 
-                                <span class="price-type">
-                                    Rental
-                                </span>
+                            <div class="col">
+                                7-day digital rental
+                            </div>
 
-                                <strong>
-                                    ${book.digitalRentalPrice}
-                                </strong>
+                            <div class="col-auto fw-semibold">
 
-                                <small>
-                                    7-day access
-                                </small>
+                                $<g:formatNumber
+                                    number="${book.digitalRentalPrice}"
+                                    minFractionDigits="2"
+                                    maxFractionDigits="2"
+                                />
 
                             </div>
 
-                        </g:if>
+                        </div>
 
-                    </div>
+                    </g:if>
 
-
-                    <!-- =========================
-                         USER ACTIONS
-                         ========================= -->
-
-                    <sec:ifLoggedIn>
-
-                        <div class="book-actions-panel">
-
-                            <div class="book-actions-heading">
-
-                                <div>
-
-                                    <span>
-                                        Available options
-                                    </span>
-
-                                    <h4>
-                                        Choose how you want to access this book
-                                    </h4>
-
-                                </div>
-
-                            </div>
+                </div>
 
 
-                            <!-- READ -->
-                            <g:if test="${canReadDigital}">
 
-                                <div class="read-access-banner">
+                <!-- =========================
+                     USER OPTIONS
+                     ========================= -->
+
+                <g:if test="${libraryUser}">
+
+                    <section class="border-top pt-4">
+
+                        <div class="section-eyebrow">
+                            Available Options
+                        </div>
+
+
+                        <h2 class="h4 mb-4">
+                            Access this book
+                        </h2>
+
+
+
+                        <!-- DIGITAL READ -->
+
+                        <g:if test="${canReadDigital}">
+
+                            <div class="p-4 border mb-4">
+
+                                <div class="d-flex flex-column
+                                            flex-md-row
+                                            justify-content-between
+                                            align-items-md-center
+                                            gap-3">
 
                                     <div>
 
-                                        <span class="read-access-icon">
+                                        <strong class="d-block">
+                                            Digital access active
+                                        </strong>
 
-                                            <i class="bi bi-book-half"></i>
-
+                                        <span class="text-muted">
+                                            You can read this book now.
                                         </span>
-
-                                        <div>
-
-                                            <strong>
-                                                Digital access active
-                                            </strong>
-
-                                            <small>
-                                                You can read this book now.
-                                            </small>
-
-                                        </div>
 
                                     </div>
 
@@ -412,266 +385,411 @@
                                         controller="digitalAccess"
                                         action="read"
                                         params="[bookId: book.id]"
-                                        class="btn read-book-btn">
+                                        class="btn btn-primary">
 
-                                        <i class="bi bi-book me-2"></i>
                                         Read Digital Book
 
                                     </g:link>
 
                                 </div>
 
+                            </div>
+
+                        </g:if>
+
+
+
+                        <!-- PURCHASE / RENT -->
+
+                        <div class="d-flex flex-wrap gap-2 mb-4">
+
+
+                            <!-- PHYSICAL PURCHASE -->
+
+                            <g:if test="${(book?.physicalSaleStock ?: 0) > 0 &&
+                                          book?.physicalSalePrice != null}">
+
+                                <g:form
+                                    controller="purchase"
+                                    action="buy"
+                                    method="POST">
+
+                                    <g:hiddenField
+                                        name="bookId"
+                                        value="${book.id}"
+                                    />
+
+                                    <g:hiddenField
+                                        name="purchaseType"
+                                        value="PHYSICAL"
+                                    />
+
+                                    <g:hiddenField
+                                        name="quantity"
+                                        value="1"
+                                    />
+
+                                    <button
+                                        type="submit"
+                                        class="btn btn-outline-dark">
+
+                                        Buy Physical
+
+                                    </button>
+
+                                </g:form>
+
                             </g:if>
 
 
-                            <div class="book-action-buttons">
 
-                                <!-- PHYSICAL PURCHASE -->
-                                <g:if test="${book?.physicalSaleStock > 0 && book?.physicalSalePrice != null}">
+                            <!-- DIGITAL PURCHASE -->
 
-                                    <g:form
-                                        controller="purchase"
-                                        action="buy"
-                                        method="POST">
+                            <g:if test="${book?.digitalAvailable &&
+                                          book?.digitalPurchasePrice != null &&
+                                          !ownsDigital}">
 
-                                        <g:hiddenField
-                                            name="bookId"
-                                            value="${book.id}"/>
+                                <g:form
+                                    controller="purchase"
+                                    action="buy"
+                                    method="POST">
 
-                                        <g:hiddenField
-                                            name="purchaseType"
-                                            value="PHYSICAL"/>
+                                    <g:hiddenField
+                                        name="bookId"
+                                        value="${book.id}"
+                                    />
 
-                                        <g:hiddenField
-                                            name="quantity"
-                                            value="1"/>
+                                    <g:hiddenField
+                                        name="purchaseType"
+                                        value="DIGITAL"
+                                    />
 
-                                        <button
-                                            type="submit"
-                                            class="btn btn-primary">
+                                    <g:hiddenField
+                                        name="quantity"
+                                        value="1"
+                                    />
 
-                                            <i class="bi bi-bag me-2"></i>
-                                            Buy Physical
+                                    <button
+                                        type="submit"
+                                        class="btn btn-outline-dark">
 
-                                        </button>
+                                        Buy Digital
 
-                                    </g:form>
+                                    </button>
 
-                                </g:if>
+                                </g:form>
 
-
-                                <!-- DIGITAL PURCHASE -->
-                                <g:if test="${book?.digitalAvailable && book?.digitalPurchasePrice != null}">
-
-                                    <g:form
-                                        controller="purchase"
-                                        action="buy"
-                                        method="POST">
-
-                                        <g:hiddenField
-                                            name="bookId"
-                                            value="${book.id}"/>
-
-                                        <g:hiddenField
-                                            name="purchaseType"
-                                            value="DIGITAL"/>
-
-                                        <g:hiddenField
-                                            name="quantity"
-                                            value="1"/>
-
-                                        <button
-                                            type="submit"
-                                            class="btn btn-dark">
-
-                                            <i class="bi bi-tablet me-2"></i>
-                                            Buy Digital
-
-                                        </button>
-
-                                    </g:form>
-
-                                </g:if>
+                            </g:if>
 
 
-                                <!-- DIGITAL RENT -->
-                                <g:if test="${book?.digitalAvailable && book?.digitalRentalPrice != null && !canReadDigital}">
 
-                                    <g:form
-                                        controller="digitalAccess"
-                                        action="rent"
-                                        method="POST">
+                            <!-- DIGITAL RENT -->
 
-                                        <g:hiddenField
-                                            name="bookId"
-                                            value="${book.id}"/>
+                            <g:if test="${book?.digitalAvailable &&
+                                          book?.digitalRentalPrice != null &&
+                                          !canReadDigital}">
 
-                                        <g:hiddenField
-                                            name="rentalDays"
-                                            value="7"/>
+                                <g:form
+                                    controller="digitalAccess"
+                                    action="rent"
+                                    method="POST">
 
-                                        <button
-                                            type="submit"
-                                            class="btn btn-outline-dark">
+                                    <g:hiddenField
+                                        name="bookId"
+                                        value="${book.id}"
+                                    />
 
-                                            <i class="bi bi-clock-history me-2"></i>
-                                            Rent for 7 Days
+                                    <g:hiddenField
+                                        name="rentalDays"
+                                        value="7"
+                                    />
 
-                                        </button>
+                                    <button
+                                        type="submit"
+                                        class="btn btn-outline-dark">
 
-                                    </g:form>
+                                        Rent for 7 Days
 
-                                </g:if>
+                                    </button>
 
+                                </g:form>
 
-                                <!-- BORROW -->
-                                <g:if test="${availableCopies}">
+                            </g:if>
 
-                                    <g:form
-                                        controller="borrowing"
-                                        action="borrow"
-                                        method="POST">
-
-                                        <g:hiddenField
-                                            name="bookCopyId"
-                                            value="${availableCopies[0].id}"/>
-
-                                        <button
-                                            type="submit"
-                                            class="btn btn-outline-primary">
-
-                                            <i class="bi bi-arrow-left-right me-2"></i>
-                                            Borrow Physical Copy
-
-                                        </button>
-
-                                    </g:form>
-
-                                </g:if><g:else>
-
-                                    <g:link
-                                        controller="reservation"
-                                        action="reserve"
-                                        params="[bookId: book.id]"
-                                        class="btn btn-outline-warning">
-
-                                        <i class="bi bi-bookmark me-2"></i>
-                                        Reserve Physical Book
-
-                                    </g:link>
-
-                                </g:else>
-
-                            </div>
+                        </div>
 
 
-                            <g:if test="${book?.membershipIncluded}">
 
-                                <div class="membership-note">
+                        <!-- =========================
+                             PHYSICAL RESERVATION
+                             ========================= -->
 
-                                    <i class="bi bi-stars"></i>
+                        <div class="border-top pt-4">
 
-                                    <span>
-                                        This digital title is included with an active membership.
-                                    </span>
+                            <h3 class="h5">
+                                Library Lending
+                            </h3>
+
+
+
+                            <!-- ALREADY RESERVED -->
+
+                            <g:if test="${currentReservation}">
+
+                                <div class="p-3 border mt-3">
+
+                                    <div class="small text-muted mb-1">
+                                        Current reservation
+                                    </div>
+
+                                    <strong>
+                                        ${currentReservation.status}
+                                    </strong>
+
+
+                                    <g:if test="${currentReservation.status == 'READY'}">
+
+                                        <div class="small text-muted mt-1">
+
+                                            Ready for pickup
+
+                                            <g:if test="${currentReservation.readyUntil}">
+
+                                                until
+
+                                                <g:formatDate
+                                                    date="${currentReservation.readyUntil}"
+                                                    format="MMM d, yyyy HH:mm"
+                                                />
+
+                                            </g:if>
+
+                                        </div>
+
+                                    </g:if>
+
+
+                                    <div class="mt-3">
+
+                                        <g:link
+                                            controller="reservation"
+                                            action="show"
+                                            id="${currentReservation.id}"
+                                            class="btn btn-sm btn-outline-secondary">
+
+                                            Reservation Details
+
+                                        </g:link>
+
+                                    </div>
 
                                 </div>
 
                             </g:if>
 
-                        </div>
-
-                    </sec:ifLoggedIn>
 
 
-                    <!-- NOT LOGGED IN -->
-                    <sec:ifNotLoggedIn>
+                            <!-- CAN RESERVE -->
 
-                        <div class="book-login-card">
+                            <g:elseif test="${physicalCopyCount > 0}">
 
-                            <div>
+                                <g:if test="${hasActiveMembership}">
 
-                                <i class="bi bi-person-circle"></i>
+                                    <p class="text-muted">
 
-                            </div>
+                                        Reserve this title.
+                                        Library staff will assign
+                                        a physical copy and prepare
+                                        it for pickup.
 
-                            <div class="flex-grow-1">
+                                    </p>
 
-                                <strong>
-                                    Want to access this book?
-                                </strong>
 
-                                <p>
-                                    Sign in to borrow, purchase,
-                                    rent or access digital content.
+                                    <g:form
+                                        controller="reservation"
+                                        action="reserve"
+                                        method="POST">
+
+                                        <g:hiddenField
+                                            name="bookId"
+                                            value="${book.id}"
+                                        />
+
+                                        <button
+                                            type="submit"
+                                            class="btn btn-primary">
+
+                                            Reserve Physical Book
+
+                                        </button>
+
+                                    </g:form>
+
+                                </g:if>
+
+
+
+                                <!-- NO MEMBERSHIP -->
+
+                                <g:else>
+
+                                    <p class="text-muted">
+
+                                        An active membership is
+                                        required to reserve and
+                                        borrow physical books.
+
+                                    </p>
+
+
+                                    <g:link
+                                        controller="membership"
+                                        action="create"
+                                        class="btn btn-outline-primary">
+
+                                        Get Membership
+
+                                    </g:link>
+
+                                </g:else>
+
+                            </g:elseif>
+
+
+
+                            <!-- NO LENDING COPIES -->
+
+                            <g:else>
+
+                                <p class="text-muted mb-0">
+
+                                    This title currently has no
+                                    library lending copies.
+
                                 </p>
 
-                            </div>
-
-
-                            <g:link
-                                controller="login"
-                                action="auth"
-                                class="btn btn-primary">
-
-                                Sign In
-
-                            </g:link>
+                            </g:else>
 
                         </div>
 
-                    </sec:ifNotLoggedIn>
 
-                </div>
+
+                        <!-- MEMBERSHIP NOTE -->
+
+                        <g:if test="${book?.membershipIncluded}">
+
+                            <div class="small text-muted mt-4">
+
+                                This digital edition is included
+                                while your library membership
+                                remains active.
+
+                            </div>
+
+                        </g:if>
+
+                    </section>
+
+                </g:if>
+
+
+
+                <!-- =========================
+                     NOT LOGGED IN
+                     ========================= -->
+
+                <sec:ifNotLoggedIn>
+
+                    <div class="border-top pt-4">
+
+                        <h2 class="h5">
+                            Sign in to access this book
+                        </h2>
+
+                        <p class="text-muted">
+
+                            Sign in to reserve books,
+                            purchase editions, rent digital
+                            titles or read your digital library.
+
+                        </p>
+
+                        <g:link
+                            controller="login"
+                            action="auth"
+                            class="btn btn-primary">
+
+                            Sign In
+
+                        </g:link>
+
+                    </div>
+
+                </sec:ifNotLoggedIn>
 
             </div>
 
         </div>
 
 
+
         <!-- =========================
-             ADMIN
+             ADMIN CONTROLS
              ========================= -->
 
         <sec:ifAnyGranted roles="ROLE_ADMIN">
 
-            <div class="book-admin-actions">
+            <div class="border-top mt-5 pt-4">
 
-                <span>
-                    Admin Controls
-                </span>
+                <div class="d-flex flex-column
+                            flex-md-row
+                            justify-content-between
+                            align-items-md-center
+                            gap-3">
+
+                    <div>
+
+                        <div class="section-eyebrow">
+                            Administration
+                        </div>
+
+                        <strong>
+                            Book Management
+                        </strong>
+
+                    </div>
 
 
-                <div>
+                    <div class="d-flex gap-2">
 
-                    <g:link
-                        controller="book"
-                        action="edit"
-                        id="${book.id}"
-                        class="btn btn-outline-dark">
+                        <g:link
+                            action="edit"
+                            id="${book.id}"
+                            class="btn btn-outline-dark">
 
-                        <i class="bi bi-pencil me-2"></i>
-                        Edit Book
+                            Edit Book
 
-                    </g:link>
+                        </g:link>
 
 
-                    <g:form
-                        resource="${book}"
-                        method="DELETE"
-                        class="d-inline">
+                        <g:form
+                            controller="book"
+                            action="delete"
+                            id="${book.id}"
+                            method="DELETE">
 
-                        <button
-                            type="submit"
-                            class="btn btn-outline-danger"
-                            onclick="return confirm('Are you sure you want to delete this book?');">
+                            <button
+                                type="submit"
+                                class="btn btn-outline-danger"
+                                onclick="return confirm('Delete this book? If it has system history it will be deactivated instead.');">
 
-                            <i class="bi bi-trash me-2"></i>
-                            Delete
+                                Delete / Deactivate
 
-                        </button>
+                            </button>
 
-                    </g:form>
+                        </g:form>
+
+                    </div>
 
                 </div>
 
@@ -684,4 +802,5 @@
 </div>
 
 </body>
+
 </html>

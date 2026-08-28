@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta name="layout" content="main"/>
     <title>Digital Access Details</title>
@@ -7,126 +8,218 @@
 
 <body>
 
-<div class="container mt-4">
+<div class="container py-5">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <g:link action="index"
+            class="text-decoration-none d-inline-block mb-4">
 
-        <h1>Digital Access Details</h1>
+        ← Back to Digital Library
 
-        <g:link action="index" class="btn btn-secondary">
-            Back to Digital Access
-        </g:link>
+    </g:link>
 
-    </div>
 
-    <g:if test="${flash.message}">
-        <div class="alert alert-info">
-            ${flash.message}
-        </div>
-    </g:if>
+    <div class="row g-5">
 
-    <div class="card shadow-sm">
 
-        <div class="card-body">
+        <div class="col-lg-5">
 
-            <div class="row mb-3">
-                <div class="col-md-3 fw-bold">
-                    Book
-                </div>
-
-                <div class="col-md-9">
-                    ${digitalAccess?.book?.title}
-                </div>
+            <div class="text-uppercase small fw-semibold text-muted mb-2">
+                Digital Access
             </div>
 
-            <div class="row mb-3">
-                <div class="col-md-3 fw-bold">
-                    Access Type
-                </div>
 
-                <div class="col-md-9">
-                    ${digitalAccess?.accessType}
-                </div>
-            </div>
+            <h1 class="display-6 fw-semibold mb-2">
 
-            <div class="row mb-3">
-                <div class="col-md-3 fw-bold">
-                    Start Date
-                </div>
+                ${digitalAccess?.book?.title}
 
-                <div class="col-md-9">
-                    <g:formatDate
-                        date="${digitalAccess?.startDate}"
-                        format="yyyy-MM-dd HH:mm"/>
-                </div>
-            </div>
+            </h1>
 
-            <div class="row mb-3">
-                <div class="col-md-3 fw-bold">
-                    End Date
-                </div>
 
-                <div class="col-md-9">
+            <g:if test="${digitalAccess?.book?.author}">
 
-                    <g:if test="${digitalAccess?.endDate}">
+                <p class="lead text-muted">
 
-                        <g:formatDate
-                            date="${digitalAccess.endDate}"
-                            format="yyyy-MM-dd HH:mm"/>
+                    ${digitalAccess.book.author.name}
 
-                    </g:if>
+                </p>
 
-                    <g:else>
-                        Permanent Access
-                    </g:else>
+            </g:if>
 
-                </div>
-            </div>
 
-            <div class="row mb-3">
-                <div class="col-md-3 fw-bold">
-                    Status
-                </div>
+            <g:if test="${digitalAccess?.status == 'ACTIVE'}">
 
-                <div class="col-md-9">
+                <span class="badge text-bg-success">
+                    ACTIVE
+                </span>
+
+            </g:if>
+
+
+            <g:else>
+
+                <span class="badge text-bg-secondary">
                     ${digitalAccess?.status}
-                </div>
-            </div>
+                </span>
 
-            <sec:ifAnyGranted roles="ROLE_ADMIN">
+            </g:else>
 
-                <div class="row mb-3">
-                    <div class="col-md-3 fw-bold">
-                        User
-                    </div>
 
-                    <div class="col-md-9">
-                        ${digitalAccess?.user?.username}
-                    </div>
-                </div>
+            <div class="mt-4">
 
-            </sec:ifAnyGranted>
+                <g:link controller="book"
+                        action="show"
+                        id="${digitalAccess?.book?.id}"
+                        class="btn btn-sm btn-outline-secondary">
 
-        </div>
+                    View Book
 
-        <g:if test="${digitalAccess?.status == 'ACTIVE'}">
-
-            <div class="card-footer">
-
-                <g:link
-                    action="read"
-                    params="[bookId: digitalAccess?.book?.id]"
-                    class="btn btn-success">
-                    Read Digital Book
                 </g:link>
 
             </div>
 
-        </g:if>
+        </div>
+
+
+
+        <div class="col-lg-7">
+
+            <div class="border-top">
+
+
+                <sec:ifAnyGranted roles="ROLE_ADMIN">
+
+                    <div class="row py-3 border-bottom">
+
+                        <div class="col-sm-4 text-muted">
+                            Member
+                        </div>
+
+                        <div class="col-sm-8 fw-semibold">
+                            ${digitalAccess?.user?.username}
+                        </div>
+
+                    </div>
+
+                </sec:ifAnyGranted>
+
+
+
+                <div class="row py-3 border-bottom">
+
+                    <div class="col-sm-4 text-muted">
+                        Access Type
+                    </div>
+
+                    <div class="col-sm-8 fw-semibold">
+
+                        ${digitalAccess?.accessType}
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="row py-3 border-bottom">
+
+                    <div class="col-sm-4 text-muted">
+                        Start Date
+                    </div>
+
+                    <div class="col-sm-8">
+
+                        <g:formatDate
+                            date="${digitalAccess?.startDate}"
+                            format="MMMM d, yyyy HH:mm"/>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="row py-3 border-bottom">
+
+                    <div class="col-sm-4 text-muted">
+                        End Date
+                    </div>
+
+                    <div class="col-sm-8">
+
+                        <g:if test="${digitalAccess?.endDate}">
+
+                            <g:formatDate
+                                date="${digitalAccess.endDate}"
+                                format="MMMM d, yyyy HH:mm"/>
+
+                        </g:if>
+
+                        <g:else>
+                            Permanent Access
+                        </g:else>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="row py-3 border-bottom">
+
+                    <div class="col-sm-4 text-muted">
+                        Status
+                    </div>
+
+                    <div class="col-sm-8 fw-semibold">
+
+                        ${digitalAccess?.status}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <sec:ifNotGranted roles="ROLE_ADMIN">
+
+                <g:if test="${canRead}">
+
+                    <div class="mt-4">
+
+                        <g:link action="read"
+                                params="[bookId: digitalAccess.book?.id]"
+                                class="btn btn-primary">
+
+                            Read Digital Book
+
+                        </g:link>
+
+                    </div>
+
+                </g:if>
+
+
+                <g:else>
+
+                    <div class="alert alert-secondary mt-4 mb-0">
+
+                        This access record is no longer
+                        valid for digital reading.
+
+                    </div>
+
+                </g:else>
+
+            </sec:ifNotGranted>
+
+        </div>
 
     </div>
 
 </div>
 
 </body>
+
 </html>

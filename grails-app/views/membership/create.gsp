@@ -8,151 +8,141 @@
 
 <body>
 
-<div class="container mt-4">
+<div class="container py-5">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <g:link action="index"
+            class="text-decoration-none d-inline-block mb-4">
+        ← Back to Memberships
+    </g:link>
 
-        <div>
-            <h1>Create Membership</h1>
+    <div class="row g-5">
 
-            <p class="text-muted mb-0">
+        <div class="col-lg-5">
+
+            <div class="text-uppercase small fw-semibold text-muted mb-2">
+                Library Membership
+            </div>
+
+            <h1 class="display-6 fw-semibold mb-3">
                 Choose your membership period.
-                The price is $${pricePerDay} per day.
+            </h1>
+
+            <p class="lead text-muted">
+                Your membership is charged by the day.
+                Start and end dates are both included
+                in the calculation.
             </p>
+
+            <div class="border-top mt-4 pt-4">
+
+                <div class="small text-muted mb-1">
+                    Daily membership price
+                </div>
+
+                <div class="h3 mb-1">
+                    $${pricePerDay}
+                </div>
+
+                <div class="text-muted">
+                    per day
+                </div>
+
+            </div>
+
         </div>
 
+        <div class="col-lg-7">
 
-        <g:link
-            action="index"
-            class="btn btn-secondary">
+            <g:hasErrors bean="${membership}">
+                <div class="alert alert-danger">
+                    Please review the membership dates below.
+                </div>
+            </g:hasErrors>
 
-            Back to Memberships
+            <g:form action="save"
+                    method="POST">
 
-        </g:link>
+                <div class="border-top">
 
-    </div>
+                    <div class="py-4 border-bottom">
 
+                        <label for="startDate"
+                               class="form-label fw-semibold">
+                            Start Date
+                        </label>
 
-    <g:if test="${flash.message}">
+                        <g:field type="date"
+                                 name="startDate"
+                                 id="startDate"
+                                 value="${membership?.startDate?.format('yyyy-MM-dd')}"
+                                 class="form-control"
+                                 required="true"/>
 
-        <div class="alert alert-danger">
-            ${flash.message}
-        </div>
+                        <div class="text-danger small mt-1">
+                            <g:fieldError
+                                bean="${membership}"
+                                field="startDate"/>
+                        </div>
 
-    </g:if>
+                    </div>
 
+                    <div class="py-4 border-bottom">
 
-    <g:hasErrors bean="${membership}">
+                        <label for="endDate"
+                               class="form-label fw-semibold">
+                            End Date
+                        </label>
 
-        <div class="alert alert-danger">
-            Please fix the errors below.
-        </div>
+                        <g:field type="date"
+                                 name="endDate"
+                                 id="endDate"
+                                 value="${membership?.endDate?.format('yyyy-MM-dd')}"
+                                 class="form-control"
+                                 required="true"/>
 
-    </g:hasErrors>
+                        <div class="text-danger small mt-1">
+                            <g:fieldError
+                                bean="${membership}"
+                                field="endDate"/>
+                        </div>
 
-
-    <div class="card shadow-sm">
-
-        <div class="card-body p-4">
-
-            <g:form
-                action="save"
-                method="POST">
-
-
-                <div class="mb-3">
-
-                    <label class="form-label">
-                        Start Date
-                    </label>
-
-
-                    <g:field
-                        type="date"
-                        name="startDate"
-                        id="startDate"
-                        value="${membership?.startDate?.format('yyyy-MM-dd')}"
-                        class="form-control"
-                        required="true"
-                    />
-
-
-                    <g:fieldError
-                        bean="${membership}"
-                        field="startDate"
-                    />
+                    </div>
 
                 </div>
 
+                <div id="priceSummary"
+                     class="mt-4 p-4 border d-none">
 
-                <div class="mb-3">
-
-                    <label class="form-label">
-                        End Date
-                    </label>
-
-
-                    <g:field
-                        type="date"
-                        name="endDate"
-                        id="endDate"
-                        value="${membership?.endDate?.format('yyyy-MM-dd')}"
-                        class="form-control"
-                        required="true"
-                    />
-
-
-                    <g:fieldError
-                        bean="${membership}"
-                        field="endDate"
-                    />
-
-                </div>
-
-
-                <div
-                    id="priceSummary"
-                    class="alert alert-info d-none">
-
-                    <div class="d-flex justify-content-between">
-
-                        <span>
-                            Membership Days
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">
+                            Membership days
                         </span>
 
                         <strong id="numberOfDays">
                             0
                         </strong>
-
                     </div>
 
-
-                    <hr/>
-
-
-                    <div class="d-flex justify-content-between">
-
-                        <span>
-                            Price Per Day
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">
+                            Price per day
                         </span>
 
                         <strong>
                             $${pricePerDay}
                         </strong>
-
                     </div>
 
+                    <div class="border-top pt-3
+                                d-flex justify-content-between
+                                align-items-end">
 
-                    <hr/>
-
-
-                    <div class="d-flex justify-content-between">
-
-                        <span>
-                            Total Price
+                        <span class="fw-semibold">
+                            Estimated total
                         </span>
 
-                        <strong id="totalPrice">
+                        <strong id="totalPrice"
+                                class="h4 mb-0">
                             $0.00
                         </strong>
 
@@ -160,14 +150,21 @@
 
                 </div>
 
+                <div id="dateError"
+                     class="alert alert-danger mt-4 d-none">
+                    End date must be the same as
+                    or later than the start date.
+                </div>
 
-                <button
-                    type="submit"
-                    class="btn btn-primary">
+                <div class="mt-4">
 
-                    Create Membership
+                    <button type="submit"
+                            id="createMembershipButton"
+                            class="btn btn-primary">
+                        Create Membership
+                    </button>
 
-                </button>
+                </div>
 
             </g:form>
 
@@ -176,7 +173,6 @@
     </div>
 
 </div>
-
 
 <script>
 
@@ -199,8 +195,29 @@ document.addEventListener(
         const totalPriceElement =
             document.getElementById('totalPrice');
 
+        const dateError =
+            document.getElementById('dateError');
+
+        const submitButton =
+            document.getElementById(
+                'createMembershipButton'
+            );
+
         const pricePerDay =
-            10.00;
+            Number('${pricePerDay}');
+
+
+        function parseDate(value) {
+
+            const parts =
+                value.split('-');
+
+            return Date.UTC(
+                Number(parts[0]),
+                Number(parts[1]) - 1,
+                Number(parts[2])
+            );
+        }
 
 
         function calculatePrice() {
@@ -211,44 +228,44 @@ document.addEventListener(
             ) {
 
                 priceSummary.classList.add('d-none');
+                dateError.classList.add('d-none');
+                submitButton.disabled = false;
+
                 return;
             }
 
 
             const start =
-                new Date(
-                    startInput.value +
-                    'T00:00:00'
-                );
+                parseDate(startInput.value);
 
             const end =
-                new Date(
-                    endInput.value +
-                    'T00:00:00'
-                );
+                parseDate(endInput.value);
 
 
             if (end < start) {
 
                 priceSummary.classList.add('d-none');
+                dateError.classList.remove('d-none');
+                submitButton.disabled = true;
+
                 return;
             }
 
 
-            const millisecondsPerDay =
+            dateError.classList.add('d-none');
+            submitButton.disabled = false;
+
+
+            const oneDay =
                 1000 * 60 * 60 * 24;
 
-
             const difference =
-                Math.round(
-                    (end - start) /
-                    millisecondsPerDay
-                );
-
+                end - start;
 
             const numberOfDays =
-                difference + 1;
-
+                Math.floor(
+                    difference / oneDay
+                ) + 1;
 
             const totalPrice =
                 numberOfDays *
@@ -256,17 +273,18 @@ document.addEventListener(
 
 
             numberOfDaysElement.textContent =
-                numberOfDays;
-
+                numberOfDays +
+                (
+                    numberOfDays === 1
+                        ? ' day'
+                        : ' days'
+                );
 
             totalPriceElement.textContent =
                 '$' +
                 totalPrice.toFixed(2);
 
-
-            priceSummary.classList.remove(
-                'd-none'
-            );
+            priceSummary.classList.remove('d-none');
         }
 
 
@@ -275,12 +293,10 @@ document.addEventListener(
             calculatePrice
         );
 
-
         endInput.addEventListener(
             'change',
             calculatePrice
         );
-
 
         calculatePrice();
     }

@@ -195,6 +195,9 @@ grails:
                     - pattern: /
                       access: ['permitAll']
 
+                    - pattern: /home/**
+                      access: ['permitAll']
+
                     - pattern: /error
                       access: ['permitAll']
 
@@ -236,6 +239,9 @@ grails:
                     - pattern: /book/show/**
                       access: ['permitAll']
 
+                    - pattern: /book/cover/**
+                      access: ['permitAll']
+
 
                     # =========================
                     # Book management - Admin
@@ -256,17 +262,78 @@ grails:
                     - pattern: /book/delete/**
                       access: ['ROLE_ADMIN']
 
-                    - pattern: /book/cover/**
+
+                    # =========================
+                    # Category browsing - Public
+                    # =========================
+
+                    - pattern: /category
                       access: ['permitAll']
+
+                    - pattern: /category/index
+                      access: ['permitAll']
+
+                    - pattern: /category/show/**
+                      access: ['permitAll']
+
+
                     # =========================
-                    # Admin management
+                    # Category management - Admin
                     # =========================
 
-                    - pattern: /author/**
+                    - pattern: /category/create
                       access: ['ROLE_ADMIN']
 
-                    - pattern: /category/**
+                    - pattern: /category/save
                       access: ['ROLE_ADMIN']
+
+                    - pattern: /category/edit/**
+                      access: ['ROLE_ADMIN']
+
+                    - pattern: /category/update/**
+                      access: ['ROLE_ADMIN']
+
+                    - pattern: /category/delete/**
+                      access: ['ROLE_ADMIN']
+
+
+                    # =========================
+                    # Author browsing - Public
+                    # =========================
+
+                    - pattern: /author
+                      access: ['permitAll']
+
+                    - pattern: /author/index
+                      access: ['permitAll']
+
+                    - pattern: /author/show/**
+                      access: ['permitAll']
+
+
+                    # =========================
+                    # Author management - Admin
+                    # =========================
+
+                    - pattern: /author/create
+                      access: ['ROLE_ADMIN']
+
+                    - pattern: /author/save
+                      access: ['ROLE_ADMIN']
+
+                    - pattern: /author/edit/**
+                      access: ['ROLE_ADMIN']
+
+                    - pattern: /author/update/**
+                      access: ['ROLE_ADMIN']
+
+                    - pattern: /author/delete/**
+                      access: ['ROLE_ADMIN']
+
+
+                    # =========================
+                    # Admin-only management
+                    # =========================
 
                     - pattern: /bookCopy/**
                       access: ['ROLE_ADMIN']
@@ -276,23 +343,48 @@ grails:
 
 
                     # =========================
-                    # User-owned services
+                    # Borrowing
                     # =========================
 
                     - pattern: /borrowing/**
                       access: ['ROLE_USER', 'ROLE_ADMIN']
 
+
+                    # =========================
+                    # Book reservations
+                    # =========================
+
                     - pattern: /reservation/**
                       access: ['ROLE_USER', 'ROLE_ADMIN']
+
+
+                    # =========================
+                    # Membership
+                    # =========================
 
                     - pattern: /membership/**
                       access: ['ROLE_USER', 'ROLE_ADMIN']
 
+
+                    # =========================
+                    # Purchases
+                    # =========================
+
                     - pattern: /purchase/**
                       access: ['ROLE_USER', 'ROLE_ADMIN']
 
+
+                    # =========================
+                    # Digital library
+                    # =========================
+
                     - pattern: /digitalAccess/**
                       access: ['ROLE_USER', 'ROLE_ADMIN']
+
+
+                    # =========================
+                    # Study room reservations
+                    # =========================
 
                     - pattern: /roomReservation/**
                       access: ['ROLE_USER', 'ROLE_ADMIN']

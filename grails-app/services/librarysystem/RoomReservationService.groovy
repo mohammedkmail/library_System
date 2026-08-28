@@ -2,10 +2,10 @@ package librarysystem
 
 import grails.gorm.transactions.Transactional
 
+import java.math.RoundingMode
+
 @Transactional
 class RoomReservationService {
-
-    MembershipService membershipService
 
     RoomReservation get(Serializable id) {
         RoomReservation.get(id)
@@ -38,13 +38,7 @@ class RoomReservationService {
             )
         }
 
-        if (!membershipService.hasActiveMembership(user)) {
-            throw new IllegalStateException(
-                'An active membership is required to reserve a study room.'
-            )
-        }
-
-        if (!studyRoom.active) {
+        if (studyRoom.active != true) {
             throw new IllegalStateException(
                 'This study room is not currently available.'
             )
@@ -56,6 +50,14 @@ class RoomReservationService {
             )
         }
 
+        Date now = new Date()
+
+        if (startTime <= now) {
+            throw new IllegalArgumentException(
+                'Start time must be in the future.'
+            )
+        }
+
         if (endTime <= startTime) {
             throw new IllegalArgumentException(
                 'End time must be after start time.'
@@ -63,14 +65,17 @@ class RoomReservationService {
         }
 
         boolean overlappingReservation =
-            RoomReservation.findAllByStudyRoomAndStatusInList(
-                studyRoom,
-                ['PENDING', 'CONFIRMED']
-            ).any { RoomReservation reservation ->
+            RoomReservation
+                .findAllByStudyRoomAndStatusInList(
+                    studyRoom,
+                    ['PENDING', 'CONFIRMED']
+                )
+                .any {
+                    RoomReservation reservation ->
 
-                startTime < reservation.endTime &&
-                endTime > reservation.startTime
-            }
+                    startTime < reservation.endTime &&
+                    endTime > reservation.startTime
+                }
 
         if (overlappingReservation) {
             throw new IllegalStateException(
@@ -78,19 +83,30 @@ class RoomReservationService {
             )
         }
 
-        long milliseconds =
+        long durationMilliseconds =
             endTime.time - startTime.time
 
+        long durationMinutes =
+            Math.ceil(
+                durationMilliseconds /
+                (1000.0 * 60)
+            ) as long
+
         BigDecimal hours =
-            new BigDecimal(milliseconds)
+            BigDecimal.valueOf(durationMinutes)
                 .divide(
-                    new BigDecimal(1000 * 60 * 60),
-                    2,
-                    BigDecimal.ROUND_UP
+                    BigDecimal.valueOf(60),
+                    4,
+                    RoundingMode.HALF_UP
                 )
 
         BigDecimal totalPrice =
-            studyRoom.pricePerHour * hours
+            studyRoom.pricePerHour
+                .multiply(hours)
+                .setScale(
+                    2,
+                    RoundingMode.HALF_UP
+                )
 
         RoomReservation reservation =
             new RoomReservation(
@@ -128,7 +144,16 @@ class RoomReservationService {
             )
         }
 
-        reservation.status = 'CANCELLED'
+        Date now = new Date()
+
+        if (reservation.startTime <= now) {
+            throw new IllegalStateException(
+                'A reservation cannot be cancelled after its start time.'
+            )
+        }
+
+        reservation.status =
+            'CANCELLED'
 
         reservation.save(
             flush: true,
@@ -138,7 +163,36 @@ class RoomReservationService {
         reservation
     }
 
+    void updateCompletedReservations() {
+
+        Date now = new Date()
+
+        List<RoomReservation> completedReservations =
+            RoomReservation
+                .findAllByStatusAndEndTimeLessThan(
+                    'CONFIRMED',
+                    now
+                )
+
+        completedReservations.each {
+            RoomReservation reservation ->
+
+            reservation.status =
+                'COMPLETED'
+
+            reservation.save(
+                flush: true,
+                failOnError: true
+            )
+        }
+    }
+
     Long countConfirmedReservations() {
-        RoomReservation.countByStatus('CONFIRMED')
+
+        updateCompletedReservations()
+
+        RoomReservation.countByStatus(
+            'CONFIRMED'
+        )
     }
 }

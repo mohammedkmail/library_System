@@ -8,36 +8,56 @@ class ReservationController {
 
     SpringSecurityService springSecurityService
     ReservationService reservationService
+    BorrowingService borrowingService
+
+    static allowedMethods = [
+        reserve   : 'POST',
+        cancel    : 'POST',
+        assignCopy: 'POST',
+        fulfill   : 'POST'
+    ]
 
     def index() {
+
+        reservationService.expireReadyReservations()
 
         User currentUser =
             springSecurityService.currentUser as User
 
-        List<Reservation> reservations
+        boolean admin =
+            isAdmin(currentUser)
 
-        if (isAdmin(currentUser)) {
+        List<Reservation> reservationList
 
-            reservations = Reservation.list(
-                sort: 'reservationDate',
-                order: 'desc'
-            )
+        if (admin) {
+
+            reservationList =
+                Reservation.list(
+                    sort: 'reservationDate',
+                    order: 'desc'
+                )
 
         } else {
 
-            reservations = Reservation.findAllByUser(
-                currentUser,
-                [
-                    sort : 'reservationDate',
-                    order: 'desc'
-                ]
-            )
+            reservationList =
+                Reservation.findAllByUser(
+                    currentUser,
+                    [
+                        sort : 'reservationDate',
+                        order: 'desc'
+                    ]
+                )
         }
 
-        respond reservations
+        respond reservationList,
+            model: [
+                isAdmin: admin
+            ]
     }
 
     def show(Long id) {
+
+        reservationService.expireReadyReservations()
 
         Reservation reservation =
             reservationService.get(id)
@@ -50,27 +70,59 @@ class ReservationController {
         User currentUser =
             springSecurityService.currentUser as User
 
+        boolean admin =
+            isAdmin(currentUser)
+
         if (
-            !isAdmin(currentUser) &&
+            !admin &&
             reservation.user.id != currentUser.id
         ) {
             render status: 403
             return
         }
 
-        respond reservation
+        List<BookCopy> availableCopyList = []
+
+        if (
+            admin &&
+            reservation.status == 'WAITING'
+        ) {
+
+            availableCopyList =
+                BookCopy.findAllByBookAndStatus(
+                    reservation.book,
+                    'AVAILABLE',
+                    [
+                        sort : 'copyCode',
+                        order: 'asc'
+                    ]
+                )
+        }
+
+        respond reservation,
+            model: [
+                isAdmin          : admin,
+                availableCopyList: availableCopyList
+            ]
     }
 
+    @Secured(['ROLE_USER'])
     def reserve(Long bookId) {
 
         User currentUser =
             springSecurityService.currentUser as User
 
-        Book book = Book.get(bookId)
+        Book book =
+            Book.get(bookId)
 
         if (!book) {
-            flash.message = 'Book not found.'
-            redirect controller: 'book', action: 'index'
+
+            flash.message =
+                'Book not found.'
+
+            redirect controller: 'book',
+                     action: 'index'
+
             return
         }
 
@@ -83,7 +135,7 @@ class ReservationController {
                 )
 
             flash.message =
-                'Book reserved successfully.'
+                'Book reservation created successfully.'
 
             redirect action: 'show',
                      id: reservation.id
@@ -93,7 +145,8 @@ class ReservationController {
             IllegalStateException e
         ) {
 
-            flash.message = e.message
+            flash.message =
+                e.message
 
             redirect controller: 'book',
                      action: 'show',
@@ -131,9 +184,46 @@ class ReservationController {
 
             redirect action: 'index'
 
-        } catch (IllegalStateException e) {
+        } catch (
+            IllegalStateException e
+        ) {
 
-            flash.message = e.message
+            flash.message =
+                e.message
+
+            redirect action: 'show',
+                     id: id
+        }
+    }
+
+    @Secured(['ROLE_ADMIN'])
+    def assignCopy(
+        Long id,
+        Long bookCopyId
+    ) {
+
+        try {
+
+            Reservation reservation =
+                reservationService
+                    .assignCopyToReservation(
+                        id,
+                        bookCopyId
+                    )
+
+            flash.message =
+                'Book copy prepared for pickup.'
+
+            redirect action: 'show',
+                     id: reservation.id
+
+        } catch (
+            IllegalArgumentException |
+            IllegalStateException e
+        ) {
+
+            flash.message =
+                e.message
 
             redirect action: 'show',
                      id: id
@@ -145,23 +235,24 @@ class ReservationController {
 
         try {
 
-            Reservation reservation =
-                reservationService.fulfillReservation(id)
-
-            if (!reservation) {
-                notFound()
-                return
-            }
+            Borrowing borrowing =
+                borrowingService
+                    .borrowReservedBook(id)
 
             flash.message =
-                'Reservation fulfilled successfully.'
+                'Book handed over and borrowing created successfully.'
 
-            redirect action: 'show',
-                     id: reservation.id
+            redirect controller: 'borrowing',
+                     action: 'show',
+                     id: borrowing.id
 
-        } catch (IllegalStateException e) {
+        } catch (
+            IllegalArgumentException |
+            IllegalStateException e
+        ) {
 
-            flash.message = e.message
+            flash.message =
+                e.message
 
             redirect action: 'show',
                      id: id
@@ -170,7 +261,8 @@ class ReservationController {
 
     private boolean isAdmin(User user) {
 
-        user.authorities*.authority
+        user?.authorities
+            *.authority
             .contains('ROLE_ADMIN')
     }
 

@@ -20,13 +20,17 @@ class BorrowingService {
         Borrowing.count()
     }
 
-    Borrowing borrowBook(User user, BookCopy bookCopy) {
+    /*
+     * Manual borrowing by an admin.
+     * Used when a user comes directly to the library
+     * without a reservation.
+     */
+    Borrowing borrowBook(
+        User user,
+        BookCopy bookCopy
+    ) {
 
-        if (!user) {
-            throw new IllegalArgumentException(
-                'User is required.'
-            )
-        }
+        validateBorrower(user)
 
         if (!bookCopy) {
             throw new IllegalArgumentException(
@@ -34,58 +38,77 @@ class BorrowingService {
             )
         }
 
-        // User must have an active membership
-        if (!membershipService.hasActiveMembership(user)) {
-            throw new IllegalStateException(
-                'An active membership is required to borrow books.'
-            )
-        }
-
-        // The physical copy must be available
         if (bookCopy.status != 'AVAILABLE') {
             throw new IllegalStateException(
                 'This book copy is not available.'
             )
         }
 
-        // Extra protection against borrowing the same copy twice
-        Borrowing activeBorrowing =
-            Borrowing.findByBookCopyAndStatus(
-                bookCopy,
-                'ACTIVE'
-            )
+        ensureCopyIsNotBorrowed(bookCopy)
 
-        if (activeBorrowing) {
-            throw new IllegalStateException(
-                'This book copy is already borrowed.'
+        createBorrowing(user, bookCopy)
+    }
+
+    /*
+     * Called by the admin when the user comes
+     * to collect a READY reservation.
+     */
+    Borrowing borrowReservedBook(Long reservationId) {
+
+        reservationService.expireReadyReservations()
+
+        Reservation reservation =
+            reservationService.get(reservationId)
+
+        if (!reservation) {
+            throw new IllegalArgumentException(
+                'Reservation not found.'
             )
         }
 
-        Date borrowDate = new Date()
+        if (reservation.status != 'READY') {
+            throw new IllegalStateException(
+                'Reservation is not ready for pickup.'
+            )
+        }
 
-        // Standard borrowing period: 14 days
-        Date dueDate = borrowDate + 14
+        if (!reservation.assignedCopy) {
+            throw new IllegalStateException(
+                'No physical copy is assigned to this reservation.'
+            )
+        }
 
-        Borrowing borrowing = new Borrowing(
-            user: user,
-            bookCopy: bookCopy,
-            borrowDate: borrowDate,
-            dueDate: dueDate,
-            status: 'ACTIVE',
-            lateFee: 0.0
-        )
+        User user = reservation.user
+        BookCopy bookCopy = reservation.assignedCopy
 
-        borrowing.save(
-            flush: true,
-            failOnError: true
-        )
+        validateBorrower(user)
 
-        // Mark the physical copy as borrowed
+        if (bookCopy.status != 'RESERVED') {
+            throw new IllegalStateException(
+                'The assigned copy is not reserved.'
+            )
+        }
+
+        if (bookCopy.book?.id != reservation.book?.id) {
+            throw new IllegalStateException(
+                'The assigned copy does not belong to the reserved book.'
+            )
+        }
+
+        ensureCopyIsNotBorrowed(bookCopy)
+
+        Borrowing borrowing =
+            createBorrowingRecord(user, bookCopy)
+
         bookCopy.status = 'BORROWED'
 
         bookCopy.save(
             flush: true,
             failOnError: true
+        )
+
+        reservationService.fulfillReservation(
+            reservation.id
         )
 
         borrowing
@@ -99,9 +122,12 @@ class BorrowingService {
             return null
         }
 
-        if (borrowing.status == 'RETURNED') {
+        if (!(borrowing.status in [
+            'ACTIVE',
+            'OVERDUE'
+        ])) {
             throw new IllegalStateException(
-                'This book has already been returned.'
+                'This borrowing has already been closed.'
             )
         }
 
@@ -110,11 +136,11 @@ class BorrowingService {
         borrowing.returnDate = returnDate
         borrowing.status = 'RETURNED'
 
-        // Late fee = 1.00 for every late day
         if (returnDate > borrowing.dueDate) {
 
             long milliseconds =
-                returnDate.time - borrowing.dueDate.time
+                returnDate.time -
+                borrowing.dueDate.time
 
             long lateDays =
                 Math.ceil(
@@ -123,11 +149,12 @@ class BorrowingService {
                 ) as long
 
             borrowing.lateFee =
-                new BigDecimal(lateDays)
+                BigDecimal.valueOf(lateDays)
 
         } else {
 
-            borrowing.lateFee = 0.0
+            borrowing.lateFee =
+                BigDecimal.ZERO
         }
 
         borrowing.save(
@@ -135,25 +162,29 @@ class BorrowingService {
             failOnError: true
         )
 
-        BookCopy returnedCopy = borrowing.bookCopy
+        BookCopy returnedCopy =
+            borrowing.bookCopy
 
-        if (returnedCopy?.book) {
+        if (returnedCopy) {
 
-            // Give the returned copy to the first waiting reservation
-            Reservation reservation =
+            Book book = returnedCopy.book
+
+            returnedCopy.status = 'AVAILABLE'
+
+            returnedCopy.save(
+                flush: true,
+                failOnError: true
+            )
+
+            /*
+             * If somebody is waiting for the book,
+             * immediately prepare the returned copy
+             * for the next reservation.
+             */
+            if (book) {
                 reservationService.assignCopy(
-                    returnedCopy.book,
+                    book,
                     returnedCopy
-                )
-
-            if (!reservation) {
-
-                // Nobody is waiting for this book
-                returnedCopy.status = 'AVAILABLE'
-
-                returnedCopy.save(
-                    flush: true,
-                    failOnError: true
                 )
             }
         }
@@ -161,11 +192,124 @@ class BorrowingService {
         borrowing
     }
 
+    void updateOverdueBorrowings() {
+
+        Date now = new Date()
+
+        List<Borrowing> overdueBorrowings =
+            Borrowing.findAllByStatusAndDueDateLessThan(
+                'ACTIVE',
+                now
+            )
+
+        overdueBorrowings.each {
+            Borrowing borrowing ->
+
+            borrowing.status = 'OVERDUE'
+
+            borrowing.save(
+                flush: true,
+                failOnError: true
+            )
+        }
+    }
+
     Long countActiveBorrowings() {
+
+        updateOverdueBorrowings()
+
         Borrowing.countByStatus('ACTIVE')
     }
 
     Long countOverdueBorrowings() {
+
+        updateOverdueBorrowings()
+
         Borrowing.countByStatus('OVERDUE')
+    }
+
+    private Borrowing createBorrowing(
+        User user,
+        BookCopy bookCopy
+    ) {
+
+        Borrowing borrowing =
+            createBorrowingRecord(
+                user,
+                bookCopy
+            )
+
+        bookCopy.status = 'BORROWED'
+
+        bookCopy.save(
+            flush: true,
+            failOnError: true
+        )
+
+        borrowing
+    }
+
+    private Borrowing createBorrowingRecord(
+        User user,
+        BookCopy bookCopy
+    ) {
+
+        Date borrowDate = new Date()
+
+        Date dueDate =
+            borrowDate + 14
+
+        Borrowing borrowing =
+            new Borrowing(
+                user: user,
+                bookCopy: bookCopy,
+                borrowDate: borrowDate,
+                dueDate: dueDate,
+                status: 'ACTIVE',
+                lateFee: BigDecimal.ZERO
+            )
+
+        borrowing.save(
+            flush: true,
+            failOnError: true
+        )
+
+        borrowing
+    }
+
+    private void validateBorrower(
+        User user
+    ) {
+
+        if (!user) {
+            throw new IllegalArgumentException(
+                'User is required.'
+            )
+        }
+
+        if (!membershipService
+            .hasActiveMembership(user)) {
+
+            throw new IllegalStateException(
+                'An active membership is required to borrow books.'
+            )
+        }
+    }
+
+    private void ensureCopyIsNotBorrowed(
+        BookCopy bookCopy
+    ) {
+
+        Borrowing openBorrowing =
+            Borrowing.findByBookCopyAndStatusInList(
+                bookCopy,
+                ['ACTIVE', 'OVERDUE']
+            )
+
+        if (openBorrowing) {
+            throw new IllegalStateException(
+                'This book copy is already borrowed.'
+            )
+        }
     }
 }

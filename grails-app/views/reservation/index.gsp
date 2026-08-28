@@ -1,150 +1,526 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <meta name="layout" content="main"/>
-    <title>Book Reservations</title>
+
+    <meta name="layout"
+          content="main"/>
+
+    <title>
+        ${isAdmin ? 'Book Reservations' : 'My Reservations'}
+    </title>
+
 </head>
 
 <body>
 
-<div class="container mt-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Book Reservations</h1>
+<div class="container py-5">
 
-        <g:link controller="book" action="index" class="btn btn-primary">
+
+    <!-- HEADER -->
+
+    <div class="d-flex flex-column flex-lg-row
+                justify-content-between align-items-lg-end
+                gap-3 mb-5">
+
+        <div>
+
+            <div class="text-uppercase small fw-semibold text-muted mb-2">
+
+                ${isAdmin ?
+                    'Circulation'
+                    :
+                    'My Library'}
+
+            </div>
+
+            <h1 class="display-6 fw-semibold mb-2">
+
+                ${isAdmin ?
+                    'Book Reservations'
+                    :
+                    'My Book Reservations'}
+
+            </h1>
+
+
+            <p class="text-muted mb-0">
+
+                <g:if test="${isAdmin}">
+                    Prepare physical copies for waiting
+                    members and record collection.
+                </g:if>
+
+                <g:else>
+                    Track your physical book requests
+                    and pickup status.
+                </g:else>
+
+            </p>
+
+        </div>
+
+
+        <g:link controller="book"
+                action="index"
+                class="btn btn-outline-primary">
+
             Browse Books
+
         </g:link>
+
     </div>
 
-    <g:if test="${flash.message}">
-        <div class="alert alert-info">
-            ${flash.message}
-        </div>
-    </g:if>
 
-    <g:if test="${reservationList}">
 
-        <div class="table-responsive">
+    <!-- =====================================================
+         ADMIN
+    ====================================================== -->
 
-            <table class="table table-striped table-hover align-middle">
+    <g:if test="${isAdmin}">
 
-                <thead>
-                <tr>
-                    <th>Book</th>
-                    <th>Reservation Date</th>
-                    <th>Status</th>
-                    <th>Assigned Copy</th>
-                    <th>Ready Until</th>
+        <g:if test="${reservationList}">
 
-                    <sec:ifAnyGranted roles="ROLE_ADMIN">
-                        <th>User</th>
-                    </sec:ifAnyGranted>
+            <div class="table-responsive">
 
-                    <th>Actions</th>
-                </tr>
-                </thead>
+                <table class="table align-middle border-top">
 
-                <tbody>
-
-                <g:each in="${reservationList}" var="reservation">
+                    <thead>
 
                     <tr>
 
-                        <td>
-                            ${reservation.book?.title}
-                        </td>
+                        <th>
+                            Member
+                        </th>
 
-                        <td>
-                            <g:formatDate
-                                date="${reservation.reservationDate}"
-                                format="yyyy-MM-dd HH:mm"/>
-                        </td>
+                        <th>
+                            Book
+                        </th>
 
-                        <td>
-                            ${reservation.status}
-                        </td>
+                        <th>
+                            Requested
+                        </th>
 
-                        <td>
-                            ${reservation.assignedCopy?.id ?: '-'}
-                        </td>
+                        <th>
+                            Copy
+                        </th>
 
-                        <td>
-                            <g:if test="${reservation.readyUntil}">
-                                <g:formatDate
-                                    date="${reservation.readyUntil}"
-                                    format="yyyy-MM-dd HH:mm"/>
-                            </g:if>
-                            <g:else>
-                                -
-                            </g:else>
-                        </td>
+                        <th>
+                            Status
+                        </th>
 
-                        <sec:ifAnyGranted roles="ROLE_ADMIN">
-                            <td>
-                                ${reservation.user?.username}
-                            </td>
-                        </sec:ifAnyGranted>
+                        <th>
+                            Pickup Deadline
+                        </th>
 
-                        <td>
-
-                            <g:link
-                                action="show"
-                                id="${reservation.id}"
-                                class="btn btn-sm btn-outline-primary">
-                                View
-                            </g:link>
-
-                            <g:if test="${reservation.status in ['WAITING', 'READY']}">
-
-                                <g:link
-                                    action="cancel"
-                                    id="${reservation.id}"
-                                    class="btn btn-sm btn-outline-danger"
-                                    onclick="return confirm('Cancel this reservation?');">
-                                    Cancel
-                                </g:link>
-
-                            </g:if>
-
-                            <sec:ifAnyGranted roles="ROLE_ADMIN">
-
-                                <g:if test="${reservation.status == 'READY'}">
-
-                                    <g:link
-                                        action="fulfill"
-                                        id="${reservation.id}"
-                                        class="btn btn-sm btn-success">
-                                        Fulfill
-                                    </g:link>
-
-                                </g:if>
-
-                            </sec:ifAnyGranted>
-
-                        </td>
+                        <th class="text-end">
+                            Actions
+                        </th>
 
                     </tr>
 
-                </g:each>
+                    </thead>
 
-                </tbody>
 
-            </table>
+                    <tbody>
 
-        </div>
+                    <g:each in="${reservationList}"
+                            var="reservation">
+
+                        <tr>
+
+                            <td class="fw-semibold">
+
+                                ${reservation.user?.username}
+
+                            </td>
+
+
+                            <td>
+
+                                <g:link controller="book"
+                                        action="show"
+                                        id="${reservation.book?.id}"
+                                        class="text-decoration-none fw-semibold">
+
+                                    ${reservation.book?.title}
+
+                                </g:link>
+
+                            </td>
+
+
+                            <td>
+
+                                <g:formatDate
+                                    date="${reservation.reservationDate}"
+                                    format="MMM d, yyyy HH:mm"/>
+
+                            </td>
+
+
+                            <td class="font-monospace">
+
+                                ${reservation.assignedCopy?.copyCode ?: '—'}
+
+                            </td>
+
+
+                            <td>
+
+                                <g:if test="${reservation.status == 'WAITING'}">
+
+                                    <span class="badge text-bg-warning">
+                                        WAITING
+                                    </span>
+
+                                </g:if>
+
+
+                                <g:elseif test="${reservation.status == 'READY'}">
+
+                                    <span class="badge text-bg-success">
+                                        READY
+                                    </span>
+
+                                </g:elseif>
+
+
+                                <g:elseif test="${reservation.status == 'FULFILLED'}">
+
+                                    <span class="badge text-bg-primary">
+                                        FULFILLED
+                                    </span>
+
+                                </g:elseif>
+
+
+                                <g:else>
+
+                                    <span class="badge text-bg-secondary">
+
+                                        ${reservation.status}
+
+                                    </span>
+
+                                </g:else>
+
+                            </td>
+
+
+                            <td>
+
+                                <g:if test="${reservation.readyUntil}">
+
+                                    <g:formatDate
+                                        date="${reservation.readyUntil}"
+                                        format="MMM d, yyyy HH:mm"/>
+
+                                </g:if>
+
+                                <g:else>
+                                    —
+                                </g:else>
+
+                            </td>
+
+
+                            <td class="text-end">
+
+                                <div class="d-inline-flex flex-wrap gap-2 justify-content-end">
+
+                                    <g:link action="show"
+                                            id="${reservation.id}"
+                                            class="btn btn-sm btn-outline-secondary">
+
+                                        <g:if test="${reservation.status == 'WAITING'}">
+                                            Prepare
+                                        </g:if>
+
+                                        <g:else>
+                                            View
+                                        </g:else>
+
+                                    </g:link>
+
+
+                                    <g:if test="${reservation.status == 'READY'}">
+
+                                        <g:form controller="reservation"
+                                                action="fulfill"
+                                                id="${reservation.id}"
+                                                method="POST"
+                                                class="d-inline">
+
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-success"
+                                                    onclick="return confirm('Confirm that the physical book is being handed to this member?');">
+
+                                                Hand Over
+
+                                            </button>
+
+                                        </g:form>
+
+                                    </g:if>
+
+
+                                    <g:if test="${reservation.status in ['WAITING', 'READY']}">
+
+                                        <g:form controller="reservation"
+                                                action="cancel"
+                                                id="${reservation.id}"
+                                                method="POST"
+                                                class="d-inline">
+
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    onclick="return confirm('Cancel this reservation?');">
+
+                                                Cancel
+
+                                            </button>
+
+                                        </g:form>
+
+                                    </g:if>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    </g:each>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </g:if>
+
+
+        <g:else>
+
+            <div class="py-5 border-top text-center">
+
+                <h2 class="h4">
+                    No reservations
+                </h2>
+
+                <p class="text-muted mb-0">
+                    Book requests will appear here
+                    when members create them.
+                </p>
+
+            </div>
+
+        </g:else>
 
     </g:if>
 
+
+
+    <!-- =====================================================
+         USER
+    ====================================================== -->
+
     <g:else>
 
-        <div class="alert alert-info">
-            No reservations found.
-        </div>
+        <g:if test="${reservationList}">
+
+            <div class="border-top">
+
+                <g:each in="${reservationList}"
+                        var="reservation">
+
+                    <article class="py-4 border-bottom">
+
+                        <div class="row align-items-center gy-3">
+
+
+                            <div class="col-lg-5">
+
+                                <div class="small text-muted mb-1">
+
+                                    ${reservation.book?.author?.name ?: 'Library collection'}
+
+                                </div>
+
+                                <h2 class="h5 mb-1">
+
+                                    <g:link controller="book"
+                                            action="show"
+                                            id="${reservation.book?.id}"
+                                            class="text-decoration-none">
+
+                                        ${reservation.book?.title}
+
+                                    </g:link>
+
+                                </h2>
+
+
+                                <span class="small text-muted">
+
+                                    Requested
+                                    <g:formatDate
+                                        date="${reservation.reservationDate}"
+                                        format="MMM d, yyyy"/>
+
+                                </span>
+
+                            </div>
+
+
+                            <div class="col-lg-3">
+
+                                <div class="small text-muted mb-1">
+                                    Status
+                                </div>
+
+
+                                <g:if test="${reservation.status == 'WAITING'}">
+
+                                    <span class="badge text-bg-warning">
+                                        Waiting
+                                    </span>
+
+                                </g:if>
+
+
+                                <g:elseif test="${reservation.status == 'READY'}">
+
+                                    <span class="badge text-bg-success">
+                                        Ready for Pickup
+                                    </span>
+
+                                </g:elseif>
+
+
+                                <g:elseif test="${reservation.status == 'FULFILLED'}">
+
+                                    <span class="badge text-bg-primary">
+                                        Collected
+                                    </span>
+
+                                </g:elseif>
+
+
+                                <g:else>
+
+                                    <span class="badge text-bg-secondary">
+
+                                        ${reservation.status}
+
+                                    </span>
+
+                                </g:else>
+
+                            </div>
+
+
+                            <div class="col-lg-4 text-lg-end">
+
+                                <div class="d-inline-flex gap-2">
+
+                                    <g:link action="show"
+                                            id="${reservation.id}"
+                                            class="btn btn-sm btn-outline-secondary">
+
+                                        View Details
+
+                                    </g:link>
+
+
+                                    <g:if test="${reservation.status in ['WAITING', 'READY']}">
+
+                                        <g:form controller="reservation"
+                                                action="cancel"
+                                                id="${reservation.id}"
+                                                method="POST"
+                                                class="d-inline">
+
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    onclick="return confirm('Cancel this reservation?');">
+
+                                                Cancel
+
+                                            </button>
+
+                                        </g:form>
+
+                                    </g:if>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <g:if test="${reservation.status == 'READY' && reservation.readyUntil}">
+
+                            <div class="mt-3 small">
+
+                                <strong>
+                                    Pickup before:
+                                </strong>
+
+                                <g:formatDate
+                                    date="${reservation.readyUntil}"
+                                    format="MMM d, yyyy HH:mm"/>
+
+                            </div>
+
+                        </g:if>
+
+                    </article>
+
+                </g:each>
+
+            </div>
+
+        </g:if>
+
+
+        <g:else>
+
+            <div class="py-5 border-top">
+
+                <h2 class="h4">
+                    No book reservations yet.
+                </h2>
+
+                <p class="text-muted">
+
+                    When you reserve a physical book,
+                    its preparation and pickup status
+                    will appear here.
+
+                </p>
+
+                <g:link controller="book"
+                        action="index"
+                        class="btn btn-primary">
+
+                    Browse Books
+
+                </g:link>
+
+            </div>
+
+        </g:else>
 
     </g:else>
 
 </div>
 
+
 </body>
+
 </html>

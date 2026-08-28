@@ -1,6 +1,7 @@
 package librarysystem
 
 import grails.plugin.springsecurity.SpringSecurityService
+import grails.plugin.springsecurity.annotation.Secured
 import grails.validation.ValidationException
 import org.springframework.web.multipart.MultipartFile
 
@@ -10,121 +11,279 @@ class BookController {
 
     BookService bookService
     DigitalAccessService digitalAccessService
+    MembershipService membershipService
     SpringSecurityService springSecurityService
 
     static allowedMethods = [
-        save  : "POST",
-        update: "PUT",
-        delete: "DELETE"
+        save  : 'POST',
+        update: 'PUT',
+        delete: 'DELETE'
     ]
 
 
+    @Secured(['permitAll'])
     def index(Integer max) {
 
-        params.max = Math.min(max ?: 10, 100)
-        params.offset = params.int('offset') ?: 0
+        int pageSize =
+            Math.min(max ?: 12, 100)
 
-        String search = params.search?.trim()
+        int offset =
+            params.int('offset') ?: 0
 
-        List<Book> books
-        Long total
+        String search =
+            params.search?.trim()
 
-        if (search) {
+        User currentUser =
+            springSecurityService.currentUser as User
 
-            books = bookService.findAllByTitleIlike(
-                "%${search}%",
-                [
-                    max   : params.max,
-                    offset: params.offset
-                ]
-            )
+        boolean admin =
+            isAdmin(currentUser)
 
-            total = bookService.countByTitleIlike(
-                "%${search}%"
-            )
+        List<Book> bookList
+        Long bookCount
+
+        Map queryOptions = [
+            max   : pageSize,
+            offset: offset,
+            sort  : 'title',
+            order : 'asc'
+        ]
+
+
+        if (admin) {
+
+            if (search) {
+
+                bookList =
+                    Book.findAllByTitleIlike(
+                        "%${search}%",
+                        queryOptions
+                    )
+
+                bookCount =
+                    Book.countByTitleIlike(
+                        "%${search}%"
+                    )
+
+            } else {
+
+                bookList =
+                    Book.list(queryOptions)
+
+                bookCount =
+                    Book.count()
+            }
 
         } else {
 
-            books = bookService.list([
-                max   : params.max,
-                offset: params.offset
-            ])
+            if (search) {
 
-            total = bookService.count()
+                bookList =
+                    Book.findAllByActiveAndTitleIlike(
+                        true,
+                        "%${search}%",
+                        queryOptions
+                    )
+
+                bookCount =
+                    Book.countByActiveAndTitleIlike(
+                        true,
+                        "%${search}%"
+                    )
+
+            } else {
+
+                bookList =
+                    Book.findAllByActive(
+                        true,
+                        queryOptions
+                    )
+
+                bookCount =
+                    Book.countByActive(true)
+            }
         }
 
-        respond books, model: [
-            bookCount: total,
-            search   : search
-        ]
+
+        respond bookList,
+            model: [
+                bookCount: bookCount,
+                search   : search,
+                pageSize : pageSize,
+                isAdmin  : admin
+            ]
     }
 
 
+    @Secured(['permitAll'])
     def show(Long id) {
 
-        Book book = bookService.get(id)
+        Book book =
+            bookService.get(id)
 
         if (!book) {
             notFound()
             return
         }
 
+
+        User currentUser =
+            springSecurityService.currentUser as User
+
+        boolean admin =
+            isAdmin(currentUser)
+
+        boolean libraryUser =
+            currentUser &&
+            !admin &&
+            isLibraryUser(currentUser)
+
+
+        if (
+            book.active != true &&
+            !admin
+        ) {
+            notFound()
+            return
+        }
+
+
         List<BookCopy> availableCopies =
             BookCopy.findAllByBookAndStatus(
                 book,
                 'AVAILABLE',
                 [
-                    sort : 'id',
+                    sort : 'copyCode',
                     order: 'asc'
                 ]
             )
 
+
+        int physicalCopyCount =
+            BookCopy.countByBook(book)
+
+
         boolean canReadDigital = false
+        boolean ownsDigital = false
+        boolean hasActiveMembership = false
+        Reservation currentReservation = null
 
-        User currentUser =
-            springSecurityService.currentUser as User
 
-        if (
-            currentUser &&
-            book.digitalAvailable
-        ) {
+        if (libraryUser) {
 
-            digitalAccessService.expireOldRentals()
+            hasActiveMembership =
+                membershipService
+                    .hasActiveMembership(currentUser)
 
-            canReadDigital =
-                digitalAccessService.canAccessBook(
+
+            currentReservation =
+                Reservation.findAllByUserAndBook(
                     currentUser,
-                    book
-                )
+                    book,
+                    [
+                        sort : 'reservationDate',
+                        order: 'desc'
+                    ]
+                ).find { Reservation reservation ->
+
+                    reservation.status in [
+                        'WAITING',
+                        'READY'
+                    ]
+                }
+
+
+            if (book.digitalAvailable) {
+
+                digitalAccessService
+                    .expireOldRentals()
+
+
+                canReadDigital =
+                    digitalAccessService
+                        .canAccessBook(
+                            currentUser,
+                            book
+                        )
+
+
+                ownsDigital =
+                    Purchase.findAllByUserAndBook(
+                        currentUser,
+                        book
+                    ).any { Purchase purchase ->
+
+                        purchase.purchaseType == 'DIGITAL' &&
+                        purchase.status == 'COMPLETED'
+                    }
+
+
+                if (!ownsDigital) {
+
+                    ownsDigital =
+                        DigitalAccess
+                            .findAllByUserAndBook(
+                                currentUser,
+                                book
+                            )
+                            .any { DigitalAccess access ->
+
+                                access.accessType == 'PURCHASE' &&
+                                access.status == 'ACTIVE'
+                            }
+                }
+            }
         }
 
-        respond book, model: [
-            availableCopies : availableCopies,
-            canReadDigital  : canReadDigital
-        ]
+
+        respond book,
+            model: [
+                availableCopies    : availableCopies,
+                physicalCopyCount  : physicalCopyCount,
+                canReadDigital     : canReadDigital,
+                ownsDigital        : ownsDigital,
+                currentReservation : currentReservation,
+                hasActiveMembership: hasActiveMembership,
+                libraryUser        : libraryUser,
+                isAdmin            : admin
+            ]
     }
 
 
+    @Secured(['ROLE_ADMIN'])
     def create() {
 
-        respond new Book(params), model: [
-            authorList  : Author.list(sort: 'name'),
-            categoryList: Category.list(sort: 'name')
-        ]
+        respond new Book(params),
+            model: [
+                authorList:
+                    Author.list(
+                        sort: 'name',
+                        order: 'asc'
+                    ),
+
+                categoryList:
+                    Category.list(
+                        sort: 'name',
+                        order: 'asc'
+                    )
+            ]
     }
 
 
+    @Secured(['ROLE_ADMIN'])
     def save(Book book) {
 
-        if (book == null) {
+        if (!book) {
             notFound()
             return
         }
+
 
         try {
 
             MultipartFile coverFile =
                 request.getFile('coverFile')
+
 
             if (
                 coverFile &&
@@ -137,6 +296,7 @@ class BookController {
                 book.coverContentType =
                     coverFile.contentType
             }
+
 
             bookService.save(book)
 
@@ -145,71 +305,80 @@ class BookController {
             flash.message =
                 'Book could not be created. Please fix the errors below.'
 
-            respond book.errors,
-                view: 'create',
+
+            render view: 'create',
                 model: [
+                    book: book,
+
                     authorList:
-                        Author.list(sort: 'name'),
+                        Author.list(
+                            sort: 'name',
+                            order: 'asc'
+                        ),
 
                     categoryList:
-                        Category.list(sort: 'name')
+                        Category.list(
+                            sort: 'name',
+                            order: 'asc'
+                        )
                 ]
 
             return
         }
 
-        request.withFormat {
 
-            form multipartForm {
+        flash.message =
+            'Book created successfully.'
 
-                flash.message = message(
-                    code: 'default.created.message',
-                    args: [
-                        message(
-                            code: 'book.label',
-                            default: 'Book'
-                        ),
-                        book.id
-                    ]
-                )
 
-                redirect book
-            }
-
-            '*' {
-                respond book, [status: CREATED]
-            }
-        }
+        redirect action: 'show',
+                 id: book.id
     }
 
 
+    @Secured(['ROLE_ADMIN'])
     def edit(Long id) {
 
-        Book book = bookService.get(id)
+        Book book =
+            bookService.get(id)
 
         if (!book) {
             notFound()
             return
         }
 
-        respond book, model: [
-            authorList  : Author.list(sort: 'name'),
-            categoryList: Category.list(sort: 'name')
-        ]
+
+        respond book,
+            model: [
+                authorList:
+                    Author.list(
+                        sort: 'name',
+                        order: 'asc'
+                    ),
+
+                categoryList:
+                    Category.list(
+                        sort: 'name',
+                        order: 'asc'
+                    )
+            ]
     }
 
 
+    @Secured(['ROLE_ADMIN'])
     def update(Book book) {
 
-        if (book == null) {
+        if (!book) {
             notFound()
             return
         }
+
 
         try {
 
             MultipartFile coverFile =
                 request.getFile('coverFile')
+
 
             if (
                 coverFile &&
@@ -223,6 +392,7 @@ class BookController {
                     coverFile.contentType
             }
 
+
             bookService.save(book)
 
         } catch (ValidationException e) {
@@ -230,50 +400,39 @@ class BookController {
             flash.message =
                 'Book could not be updated. Please fix the errors below.'
 
-            respond book.errors,
-                view: 'edit',
+
+            render view: 'edit',
                 model: [
+                    book: book,
+
                     authorList:
-                        Author.list(sort: 'name'),
+                        Author.list(
+                            sort: 'name',
+                            order: 'asc'
+                        ),
 
                     categoryList:
-                        Category.list(sort: 'name')
+                        Category.list(
+                            sort: 'name',
+                            order: 'asc'
+                        )
                 ]
 
             return
         }
 
-        request.withFormat {
 
-            form multipartForm {
+        flash.message =
+            'Book updated successfully.'
 
-                flash.message = message(
-                    code: 'default.updated.message',
-                    args: [
-                        message(
-                            code: 'book.label',
-                            default: 'Book'
-                        ),
-                        book.id
-                    ]
-                )
 
-                redirect book
-            }
-
-            '*' {
-                respond book, [status: OK]
-            }
-        }
+        redirect action: 'show',
+                 id: book.id
     }
 
 
+    @Secured(['ROLE_ADMIN'])
     def delete(Long id) {
-
-        if (id == null) {
-            notFound()
-            return
-        }
 
         Book book =
             bookService.get(id)
@@ -283,55 +442,88 @@ class BookController {
             return
         }
 
-        bookService.delete(id)
 
-        request.withFormat {
+        boolean hasSystemHistory =
+            BookCopy.countByBook(book) > 0 ||
+            Reservation.countByBook(book) > 0 ||
+            Purchase.countByBook(book) > 0 ||
+            DigitalAccess.countByBook(book) > 0
 
-            form multipartForm {
 
-                flash.message = message(
-                    code: 'default.deleted.message',
-                    args: [
-                        message(
-                            code: 'book.label',
-                            default: 'Book'
-                        ),
-                        id
-                    ]
-                )
+        if (hasSystemHistory) {
 
-                redirect(
-                    action: "index",
-                    method: "GET"
-                )
+            try {
+
+                book.active = false
+
+                bookService.save(book)
+
+
+                flash.message =
+                    'This book has system history, so it was deactivated instead of deleted.'
+
+            } catch (ValidationException e) {
+
+                flash.message =
+                    'Book could not be deactivated.'
+
+
+                redirect action: 'show',
+                         id: book.id
+
+                return
             }
 
-            '*' {
-                render status: NO_CONTENT
-            }
+        } else {
+
+            bookService.delete(id)
+
+            flash.message =
+                'Book deleted successfully.'
         }
+
+
+        redirect action: 'index'
     }
 
 
+    @Secured(['permitAll'])
     def cover(Long id) {
 
         Book book =
             bookService.get(id)
+
 
         if (
             !book ||
             !book.coverData
         ) {
 
-            render status: 404
+            render status: NOT_FOUND
             return
         }
+
+
+        User currentUser =
+            springSecurityService.currentUser as User
+
+
+        if (
+            book.active != true &&
+            !isAdmin(currentUser)
+        ) {
+
+            render status: NOT_FOUND
+            return
+        }
+
 
         response.contentType =
             book.coverContentType ?: 'image/jpeg'
 
         response.contentLength =
             book.coverData.length
+
 
         response.outputStream.write(
             book.coverData
@@ -341,28 +533,34 @@ class BookController {
     }
 
 
+    private boolean isAdmin(User user) {
+
+        user?.authorities
+            *.authority
+            .contains('ROLE_ADMIN')
+    }
+
+
+    private boolean isLibraryUser(User user) {
+
+        user?.authorities
+            *.authority
+            .contains('ROLE_USER')
+    }
+
+
     protected void notFound() {
 
         request.withFormat {
 
             form multipartForm {
 
-                flash.message = message(
-                    code: 'default.not.found.message',
-                    args: [
-                        message(
-                            code: 'book.label',
-                            default: 'Book'
-                        ),
-                        params.id
-                    ]
-                )
+                flash.message =
+                    'Book not found.'
 
-                redirect(
-                    action: "index",
-                    method: "GET"
-                )
+                redirect action: 'index'
             }
+
 
             '*' {
                 render status: NOT_FOUND

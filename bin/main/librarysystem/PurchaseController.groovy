@@ -9,6 +9,10 @@ class PurchaseController {
     SpringSecurityService springSecurityService
     PurchaseService purchaseService
 
+    static allowedMethods = [
+        buy: 'POST'
+    ]
+
     def index() {
 
         User currentUser =
@@ -18,20 +22,22 @@ class PurchaseController {
 
         if (isAdmin(currentUser)) {
 
-            purchases = Purchase.list(
-                sort: 'purchaseDate',
-                order: 'desc'
-            )
+            purchases =
+                Purchase.list(
+                    sort: 'purchaseDate',
+                    order: 'desc'
+                )
 
         } else {
 
-            purchases = Purchase.findAllByUser(
-                currentUser,
-                [
-                    sort : 'purchaseDate',
-                    order: 'desc'
-                ]
-            )
+            purchases =
+                Purchase.findAllByUser(
+                    currentUser,
+                    [
+                        sort : 'purchaseDate',
+                        order: 'desc'
+                    ]
+                )
         }
 
         respond purchases
@@ -61,24 +67,36 @@ class PurchaseController {
         respond purchase
     }
 
+    @Secured(['ROLE_USER'])
     def buy(Long bookId) {
 
         User currentUser =
             springSecurityService.currentUser as User
 
-        Book book = Book.get(bookId)
+        Book book =
+            Book.get(bookId)
 
         if (!book) {
-            flash.message = 'Book not found.'
-            redirect controller: 'book', action: 'index'
+
+            flash.message =
+                'Book not found.'
+
+            redirect controller: 'book',
+                     action: 'index'
+
             return
         }
 
         String purchaseType =
-            params.purchaseType?.toUpperCase()
+            params.purchaseType
+                ?.toUpperCase()
 
         Integer quantity =
-            params.int('quantity') ?: 1
+            params.int('quantity')
+
+        if (quantity == null) {
+            quantity = 1
+        }
 
         try {
 
@@ -111,7 +129,8 @@ class PurchaseController {
 
     private boolean isAdmin(User user) {
 
-        user.authorities*.authority
+        user?.authorities
+            *.authority
             .contains('ROLE_ADMIN')
     }
 

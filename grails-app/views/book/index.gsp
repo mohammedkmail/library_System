@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta name="layout" content="main"/>
     <title>Books</title>
@@ -8,145 +9,134 @@
 <body>
 
 <section class="catalog-header">
+
     <div class="container">
 
-        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3">
+        <div class="catalog-header-inner">
 
             <div>
-                <span class="section-eyebrow">Library Catalog</span>
 
-                <h1 class="page-title mb-2">
+                <span class="section-eyebrow">
+                    Library Catalog
+                </span>
+
+                <h1 class="catalog-title">
                     Explore Books
                 </h1>
 
-                <p class="text-muted mb-0">
-                    Discover physical and digital books available in the library.
+                <p class="catalog-intro">
+                    Discover books to borrow, purchase
+                    or read digitally.
                 </p>
+
             </div>
 
+
             <sec:ifAnyGranted roles="ROLE_ADMIN">
+
                 <g:link
                     action="create"
                     class="btn btn-primary">
 
-                    <i class="bi bi-plus-circle me-2"></i>
                     Add Book
 
                 </g:link>
+
             </sec:ifAnyGranted>
 
         </div>
 
     </div>
+
 </section>
 
 
-<section class="catalog-content">
+<section class="catalog-section">
+
     <div class="container">
 
-        <g:if test="${flash.message}">
-            <div class="alert alert-success">
-                <i class="bi bi-check-circle me-2"></i>
-                ${flash.message}
-            </div>
-        </g:if>
 
+        <g:form
+            action="index"
+            method="GET"
+            class="catalog-search">
 
-        <div class="catalog-search-card">
+            <div class="input-group">
 
-            <g:form
-                method="GET"
-                action="index"
-                class="row g-3 align-items-center">
-
-                <div class="col-lg">
-
-                    <div class="input-group">
-
-                        <span class="input-group-text">
-                            <i class="bi bi-search"></i>
-                        </span>
-
-                        <input
-                            type="text"
-                            name="search"
-                            value="${search ?: ''}"
-                            class="form-control"
-                            placeholder="Search by book title..."
-                        />
-
-                    </div>
-
-                </div>
-
-                <div class="col-auto">
-
-                    <button
-                        type="submit"
-                        class="btn btn-primary">
-
-                        Search
-
-                    </button>
-
-                </div>
-
-                <g:if test="${search}">
-
-                    <div class="col-auto">
-
-                        <g:link
-                            action="index"
-                            class="btn btn-outline-secondary">
-
-                            Clear
-
-                        </g:link>
-
-                    </div>
-
-                </g:if>
-
-            </g:form>
-
-        </div>
-
-
-        <div class="d-flex justify-content-between align-items-center mb-4">
-
-            <div class="catalog-result-count">
-
-                <strong>${bookCount ?: 0}</strong>
-
-                <span>
-                    ${(bookCount ?: 0) == 1 ? 'book' : 'books'} found
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
                 </span>
 
+                <input
+                    type="text"
+                    name="search"
+                    value="${search ?: ''}"
+                    class="form-control"
+                    placeholder="Search by title..."
+                />
+
+                <button
+                    type="submit"
+                    class="btn btn-primary">
+
+                    Search
+
+                </button>
+
             </div>
+
+        </g:form>
+
+
+        <div class="d-flex justify-content-between
+                    align-items-center mt-4 mb-4">
+
+            <div class="text-muted">
+
+                <strong>
+                    ${bookCount ?: 0}
+                </strong>
+
+                ${(bookCount ?: 0) == 1
+                    ? 'book'
+                    : 'books'}
+
+            </div>
+
 
             <g:if test="${search}">
 
-                <div class="text-muted small">
-                    Results for:
-                    <strong>${search}</strong>
-                </div>
+                <g:link
+                    action="index"
+                    class="text-link">
+
+                    Clear search
+
+                </g:link>
 
             </g:if>
 
         </div>
 
 
+
         <g:if test="${bookList}">
 
-            <div class="row g-4">
+            <div class="book-shelf-grid">
 
-                <g:each in="${bookList}" var="book">
+                <g:each
+                    in="${bookList}"
+                    var="book">
 
-                    <div class="col-sm-6 col-lg-4 col-xl-3">
+                    <article class="book-shelf-item">
 
-                        <div class="catalog-book-card">
 
-                            <div class="catalog-book-cover">
+                        <g:link
+                            action="show"
+                            id="${book.id}"
+                            class="book-cover-link">
+
+                            <div class="book-cover-frame">
 
                                 <g:if test="${book.coverData}">
 
@@ -157,32 +147,75 @@
                                             id: book.id
                                         )}"
                                         alt="${book.title}"
+                                        class="book-cover-image"
                                     />
 
                                 </g:if>
 
                                 <g:else>
 
-                                    <div class="catalog-no-cover">
-
-                                        <i class="bi bi-book"></i>
+                                    <div class="book-cover-placeholder">
 
                                         <span>
-                                            No Cover
+                                            ${book.title}
                                         </span>
 
                                     </div>
 
                                 </g:else>
 
+                            </div>
+
+                        </g:link>
+
+
+
+                        <div class="book-shelf-info">
+
+                            <div class="book-meta">
+
+                                ${book.category?.name ?: 'Uncategorized'}
+
+                            </div>
+
+
+                            <h2 class="h5 mb-1">
+
+                                <g:link
+                                    action="show"
+                                    id="${book.id}"
+                                    class="text-decoration-none">
+
+                                    ${book.title}
+
+                                </g:link>
+
+                            </h2>
+
+
+                            <div class="text-muted small mb-3">
+
+                                ${book.author?.name ?: 'Unknown Author'}
+
+                            </div>
+
+
+
+                            <div class="d-flex flex-wrap gap-2 mb-3">
 
                                 <g:if test="${book.digitalAvailable}">
 
-                                    <span class="catalog-badge catalog-badge-digital">
-
-                                        <i class="bi bi-tablet me-1"></i>
+                                    <span class="status-badge">
                                         Digital
+                                    </span>
 
+                                </g:if>
+
+
+                                <g:if test="${book.membershipIncluded}">
+
+                                    <span class="status-badge">
+                                        Membership
                                     </span>
 
                                 </g:if>
@@ -190,95 +223,81 @@
 
                                 <g:if test="${(book.physicalSaleStock ?: 0) > 0}">
 
-                                    <span class="catalog-stock catalog-in-stock">
-                                        In Stock
+                                    <span class="status-badge">
+                                        Physical Sale
                                     </span>
 
-                                </g:if><g:else>
+                                </g:if>
 
-                                    <span class="catalog-stock catalog-out-stock">
-                                        Out of Stock
+
+                                <g:if test="${isAdmin && !book.active}">
+
+                                    <span class="status-badge status-inactive">
+                                        Inactive
                                     </span>
 
-                                </g:else>
+                                </g:if>
 
                             </div>
 
 
-                            <div class="catalog-book-body">
 
-                                <div class="catalog-category">
-                                    ${book.category?.name ?: 'Uncategorized'}
-                                </div>
+                            <div class="small">
 
-                                <h3 class="catalog-book-title">
-                                    ${book.title}
-                                </h3>
+                                <g:if test="${book.physicalSalePrice != null}">
 
-                                <div class="catalog-author">
+                                    <div class="mb-1">
 
-                                    <i class="bi bi-person me-1"></i>
+                                        Physical:
 
-                                    ${book.author?.name ?: 'Unknown Author'}
+                                        <strong>
 
-                                </div>
+                                            $<g:formatNumber
+                                                number="${book.physicalSalePrice}"
+                                                minFractionDigits="2"
+                                                maxFractionDigits="2"
+                                            />
 
+                                        </strong>
 
-                                <div class="catalog-book-meta">
+                                    </div>
 
-                                    <span>
-                                        <i class="bi bi-upc-scan me-1"></i>
-                                        ${book.isbn ?: 'No ISBN'}
-                                    </span>
-
-                                </div>
+                                </g:if>
 
 
-                                <div class="catalog-price-area">
+                                <g:if test="${book.digitalAvailable &&
+                                              book.digitalPurchasePrice != null}">
 
-                                    <g:if test="${book.physicalSalePrice != null}">
+                                    <div>
 
-                                        <div>
-                                            <span class="catalog-price-label">
-                                                Physical
-                                            </span>
+                                        Digital:
 
-                                            <strong class="catalog-price">
-                                                ${book.physicalSalePrice}
-                                            </strong>
-                                        </div>
+                                        <strong>
 
-                                    </g:if>
+                                            $<g:formatNumber
+                                                number="${book.digitalPurchasePrice}"
+                                                minFractionDigits="2"
+                                                maxFractionDigits="2"
+                                            />
 
+                                        </strong>
 
-                                    <g:if test="${book.digitalAvailable && book.digitalPurchasePrice != null}">
+                                    </div>
 
-                                        <div>
-                                            <span class="catalog-price-label">
-                                                Digital
-                                            </span>
-
-                                            <strong class="catalog-price">
-                                                ${book.digitalPurchasePrice}
-                                            </strong>
-                                        </div>
-
-                                    </g:if>
-
-                                </div>
+                                </g:if>
 
                             </div>
 
 
-                            <div class="catalog-book-footer">
+
+                            <div class="mt-3 d-flex gap-2">
 
                                 <g:link
                                     action="show"
                                     id="${book.id}"
-                                    class="btn btn-primary flex-grow-1">
+                                    class="btn btn-sm btn-outline-dark">
 
-                                    <i class="bi bi-eye me-1"></i>
-                                    View Details
+                                    View Book
 
                                 </g:link>
 
@@ -288,9 +307,9 @@
                                     <g:link
                                         action="edit"
                                         id="${book.id}"
-                                        class="btn btn-outline-secondary">
+                                        class="btn btn-sm btn-outline-secondary">
 
-                                        <i class="bi bi-pencil"></i>
+                                        Edit
 
                                     </g:link>
 
@@ -300,26 +319,26 @@
 
                         </div>
 
-                    </div>
+                    </article>
 
                 </g:each>
 
             </div>
 
-        </g:if><g:else>
+        </g:if>
 
-            <div class="catalog-empty">
 
-                <div class="catalog-empty-icon">
-                    <i class="bi bi-search"></i>
-                </div>
+        <g:else>
 
-                <h3>
+            <div class="empty-state">
+
+                <h2>
                     No books found
-                </h3>
+                </h2>
 
                 <p>
-                    Try changing your search term or browse the full catalog.
+                    Try a different title or return
+                    to the full catalog.
                 </p>
 
                 <g:link
@@ -335,12 +354,14 @@
         </g:else>
 
 
-        <g:if test="${bookCount > params.int('max')}">
 
-            <div class="catalog-pagination">
+        <g:if test="${(bookCount ?: 0) > (pageSize ?: 12)}">
+
+            <div class="library-pagination">
 
                 <g:paginate
                     total="${bookCount ?: 0}"
+                    max="${pageSize ?: 12}"
                     params="[search: search]"
                 />
 
@@ -349,7 +370,9 @@
         </g:if>
 
     </div>
+
 </section>
 
 </body>
+
 </html>

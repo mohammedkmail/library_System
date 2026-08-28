@@ -36,18 +36,27 @@ class ReservationService {
             )
         }
 
-        if (!membershipService.hasActiveMembership(user)) {
+        if (!book.active) {
+            throw new IllegalStateException(
+                'This book is not currently available.'
+            )
+        }
+
+        if (!membershipService
+            .hasActiveMembership(user)) {
+
             throw new IllegalStateException(
                 'An active membership is required to reserve books.'
             )
         }
 
         Reservation existingReservation =
-            Reservation.findByUserAndBookAndStatus(
-                user,
-                book,
-                'WAITING'
-            )
+            Reservation
+                .findByUserAndBookAndStatusInList(
+                    user,
+                    book,
+                    ['WAITING', 'READY']
+                )
 
         if (existingReservation) {
             throw new IllegalStateException(
@@ -55,14 +64,15 @@ class ReservationService {
             )
         }
 
-        Reservation reservation = new Reservation(
-            user: user,
-            book: book,
-            reservationDate: new Date(),
-            status: 'WAITING',
-            readyUntil: null,
-            assignedCopy: null
-        )
+        Reservation reservation =
+            new Reservation(
+                user: user,
+                book: book,
+                reservationDate: new Date(),
+                status: 'WAITING',
+                readyUntil: null,
+                assignedCopy: null
+            )
 
         reservation.save(
             flush: true,
@@ -72,25 +82,33 @@ class ReservationService {
         reservation
     }
 
-    Reservation getNextWaitingReservation(Book book) {
+    Reservation getNextWaitingReservation(
+        Book book
+    ) {
 
         Reservation.findByBookAndStatus(
             book,
             'WAITING',
-            [sort: 'reservationDate', order: 'asc']
+            [
+                sort : 'reservationDate',
+                order: 'asc'
+            ]
         )
     }
 
+    /*
+     * Used automatically when a physical copy
+     * becomes available, for example after return.
+     */
     Reservation assignCopy(
         Book book,
         BookCopy bookCopy
     ) {
 
-        if (!book || !bookCopy) {
-            throw new IllegalArgumentException(
-                'Book and book copy are required.'
-            )
-        }
+        validateAvailableCopy(
+            book,
+            bookCopy
+        )
 
         Reservation reservation =
             getNextWaitingReservation(book)
@@ -99,30 +117,64 @@ class ReservationService {
             return null
         }
 
-        reservation.assignedCopy = bookCopy
-        reservation.status = 'READY'
-
-        // User has 1 day to collect the reserved copy
-        reservation.readyUntil = new Date() + 1
-
-        reservation.save(
-            flush: true,
-            failOnError: true
+        prepareReservation(
+            reservation,
+            bookCopy
         )
-
-        bookCopy.status = 'RESERVED'
-
-        bookCopy.save(
-            flush: true,
-            failOnError: true
-        )
-
-        reservation
     }
 
+    /*
+     * Used by the admin when preparing
+     * a specific waiting reservation.
+     */
+    Reservation assignCopyToReservation(
+        Long reservationId,
+        Long bookCopyId
+    ) {
+
+        Reservation reservation =
+            Reservation.get(reservationId)
+
+        if (!reservation) {
+            throw new IllegalArgumentException(
+                'Reservation not found.'
+            )
+        }
+
+        if (reservation.status != 'WAITING') {
+            throw new IllegalStateException(
+                'Only waiting reservations can be prepared.'
+            )
+        }
+
+        BookCopy bookCopy =
+            BookCopy.get(bookCopyId)
+
+        if (!bookCopy) {
+            throw new IllegalArgumentException(
+                'Book copy not found.'
+            )
+        }
+
+        validateAvailableCopy(
+            reservation.book,
+            bookCopy
+        )
+
+        prepareReservation(
+            reservation,
+            bookCopy
+        )
+    }
+
+    /*
+     * This method only closes the reservation.
+     * BorrowingService creates the actual borrowing first.
+     */
     Reservation fulfillReservation(Long id) {
 
-        Reservation reservation = Reservation.get(id)
+        Reservation reservation =
+            Reservation.get(id)
 
         if (!reservation) {
             return null
@@ -131,6 +183,12 @@ class ReservationService {
         if (reservation.status != 'READY') {
             throw new IllegalStateException(
                 'Reservation is not ready for pickup.'
+            )
+        }
+
+        if (!reservation.assignedCopy) {
+            throw new IllegalStateException(
+                'Reservation has no assigned copy.'
             )
         }
 
@@ -146,7 +204,8 @@ class ReservationService {
 
     Reservation cancelReservation(Long id) {
 
-        Reservation reservation = Reservation.get(id)
+        Reservation reservation =
+            Reservation.get(id)
 
         if (!reservation) {
             return null
@@ -162,22 +221,38 @@ class ReservationService {
             )
         }
 
+        BookCopy releasedCopy =
+            reservation.assignedCopy
+
+        Book book =
+            reservation.book
+
         reservation.status = 'CANCELLED'
-
-        if (reservation.assignedCopy) {
-
-            reservation.assignedCopy.status = 'AVAILABLE'
-
-            reservation.assignedCopy.save(
-                flush: true,
-                failOnError: true
-            )
-        }
 
         reservation.save(
             flush: true,
             failOnError: true
         )
+
+        if (releasedCopy) {
+
+            releasedCopy.status =
+                'AVAILABLE'
+
+            releasedCopy.save(
+                flush: true,
+                failOnError: true
+            )
+
+            /*
+             * Give the copy to the next
+             * person waiting for the same book.
+             */
+            assignCopy(
+                book,
+                releasedCopy
+            )
+        }
 
         reservation
     }
@@ -187,37 +262,114 @@ class ReservationService {
         Date now = new Date()
 
         List<Reservation> expiredReservations =
-            Reservation.findAllByStatus('READY')
-                .findAll {
-                    it.readyUntil && it.readyUntil < now
-                }
-
-        expiredReservations.each { Reservation reservation ->
-
-            reservation.status = 'EXPIRED'
-
-            if (reservation.assignedCopy) {
-
-                BookCopy copy = reservation.assignedCopy
-
-                reservation.assignedCopy = null
-
-                copy.status = 'AVAILABLE'
-
-                copy.save(
-                    flush: true,
-                    failOnError: true
+            Reservation
+                .findAllByStatusAndReadyUntilLessThan(
+                    'READY',
+                    now
                 )
-            }
+
+        expiredReservations.each {
+            Reservation reservation ->
+
+            BookCopy releasedCopy =
+                reservation.assignedCopy
+
+            Book book =
+                reservation.book
+
+            reservation.status =
+                'EXPIRED'
 
             reservation.save(
                 flush: true,
                 failOnError: true
             )
+
+            if (releasedCopy) {
+
+                releasedCopy.status =
+                    'AVAILABLE'
+
+                releasedCopy.save(
+                    flush: true,
+                    failOnError: true
+                )
+
+                /*
+                 * Pass the released copy
+                 * to the next waiting user.
+                 */
+                assignCopy(
+                    book,
+                    releasedCopy
+                )
+            }
         }
     }
 
     Long countWaitingReservations() {
-        Reservation.countByStatus('WAITING')
+
+        expireReadyReservations()
+
+        Reservation.countByStatus(
+            'WAITING'
+        )
+    }
+
+    private Reservation prepareReservation(
+        Reservation reservation,
+        BookCopy bookCopy
+    ) {
+
+        reservation.assignedCopy =
+            bookCopy
+
+        reservation.status =
+            'READY'
+
+        /*
+         * User has one day to collect it.
+         */
+        reservation.readyUntil =
+            new Date() + 1
+
+        reservation.save(
+            flush: true,
+            failOnError: true
+        )
+
+        bookCopy.status =
+            'RESERVED'
+
+        bookCopy.save(
+            flush: true,
+            failOnError: true
+        )
+
+        reservation
+    }
+
+    private void validateAvailableCopy(
+        Book book,
+        BookCopy bookCopy
+    ) {
+
+        if (!book || !bookCopy) {
+            throw new IllegalArgumentException(
+                'Book and book copy are required.'
+            )
+        }
+
+        if (bookCopy.book?.id != book.id) {
+            throw new IllegalArgumentException(
+                'The selected copy does not belong to this book.'
+            )
+        }
+
+        if (bookCopy.status != 'AVAILABLE') {
+            throw new IllegalStateException(
+                'The selected book copy is not available.'
+            )
+        }
     }
 }

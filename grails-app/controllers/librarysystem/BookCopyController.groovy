@@ -1,9 +1,7 @@
 package librarysystem
 
-import grails.validation.ValidationException
 import grails.plugin.springsecurity.annotation.Secured
-
-import static org.springframework.http.HttpStatus.*
+import grails.validation.ValidationException
 
 @Secured(['ROLE_ADMIN'])
 class BookCopyController {
@@ -11,20 +9,40 @@ class BookCopyController {
     BookCopyService bookCopyService
 
     static allowedMethods = [
-        save  : "POST",
-        update: "PUT",
-        delete: "DELETE"
+        save  : 'POST',
+        update: 'PUT',
+        delete: 'DELETE'
     ]
+
 
     def index(Integer max) {
 
-        params.max = Math.min(max ?: 10, 100)
+        int pageSize =
+            Math.min(max ?: 20, 100)
 
-        respond bookCopyService.list(params),
+        int offset =
+            params.int('offset') ?: 0
+
+        List<BookCopy> bookCopyList =
+            bookCopyService.list(
+                [
+                    max   : pageSize,
+                    offset: offset,
+                    sort  : 'copyCode',
+                    order : 'asc'
+                ]
+            )
+
+        respond bookCopyList,
             model: [
-                bookCopyCount: bookCopyService.count()
+                bookCopyCount:
+                    bookCopyService.count(),
+
+                pageSize:
+                    pageSize
             ]
     }
+
 
     def show(Long id) {
 
@@ -36,23 +54,65 @@ class BookCopyController {
             return
         }
 
-        respond bookCopy
-    }
+        int borrowingCount =
+            Borrowing.countByBookCopy(bookCopy)
 
-    def create() {
+        int reservationCount =
+            Reservation.countByAssignedCopy(bookCopy)
 
-        respond new BookCopy(params),
+        boolean hasHistory =
+            borrowingCount > 0 ||
+            reservationCount > 0
+
+        boolean operationallyLocked =
+            bookCopy.status in [
+                'BORROWED',
+                'RESERVED'
+            ]
+
+        respond bookCopy,
             model: [
-                bookList: Book.list(sort: 'title')
+                borrowingCount   : borrowingCount,
+                reservationCount : reservationCount,
+                hasHistory       : hasHistory,
+                canDelete        :
+                    !hasHistory &&
+                    !operationallyLocked
             ]
     }
 
+
+    def create() {
+
+        BookCopy bookCopy =
+            new BookCopy(params)
+
+        bookCopy.status =
+            'AVAILABLE'
+
+        respond bookCopy,
+            model: [
+                bookList:
+                    activeBookList()
+            ]
+    }
+
+
     def save(BookCopy bookCopy) {
 
-        if (bookCopy == null) {
+        if (!bookCopy) {
             notFound()
             return
         }
+
+        /*
+         * New physical copies always start AVAILABLE.
+         *
+         * BORROWED and RESERVED are controlled by
+         * the circulation workflow.
+         */
+        bookCopy.status =
+            'AVAILABLE'
 
         try {
 
@@ -63,10 +123,13 @@ class BookCopyController {
             flash.message =
                 'Book copy could not be created. Please fix the errors below.'
 
-            respond bookCopy.errors,
-                view: 'create',
+            render view: 'create',
                 model: [
-                    bookList: Book.list(sort: 'title')
+                    bookCopy:
+                        bookCopy,
+
+                    bookList:
+                        activeBookList()
                 ]
 
             return
@@ -79,6 +142,7 @@ class BookCopyController {
                  id: bookCopy.id
     }
 
+
     def edit(Long id) {
 
         BookCopy bookCopy =
@@ -89,18 +153,140 @@ class BookCopyController {
             return
         }
 
-        respond bookCopy,
-            model: [
-                bookList: Book.list(sort: 'title')
-            ]
+        render view: 'edit',
+            model: editModel(bookCopy)
     }
 
-    def update(BookCopy bookCopy) {
 
-        if (bookCopy == null) {
+    def update(Long id) {
+
+        BookCopy bookCopy =
+            bookCopyService.get(id)
+
+        if (!bookCopy) {
             notFound()
             return
         }
+
+        Long submittedVersion =
+            params.long('version')
+
+        if (
+            submittedVersion != null &&
+            bookCopy.version > submittedVersion
+        ) {
+
+            bookCopy.errors.rejectValue(
+                'version',
+                'default.optimistic.locking.failure',
+                [
+                    message(
+                        code: 'bookCopy.label',
+                        default: 'Book Copy'
+                    )
+                ] as Object[],
+                'Another user has updated this book copy.'
+            )
+
+            render view: 'edit',
+                model: editModel(bookCopy)
+
+            return
+        }
+
+
+        boolean history =
+            hasHistory(bookCopy)
+
+        boolean canChangeBook =
+            !history &&
+            bookCopy.status == 'AVAILABLE'
+
+        boolean operationallyLocked =
+            bookCopy.status in [
+                'BORROWED',
+                'RESERVED'
+            ]
+
+
+        bookCopy.copyCode =
+            params.copyCode
+                ?.toString()
+                ?.trim()
+
+
+        /*
+         * The book association can only be changed
+         * before the physical copy has circulation history.
+         */
+        if (canChangeBook) {
+
+            Long requestedBookId =
+                params.long('book.id')
+
+            Book requestedBook =
+                requestedBookId
+                    ? Book.get(requestedBookId)
+                    : null
+
+            bookCopy.book =
+                requestedBook
+        }
+
+
+        String requestedStatus =
+            params.status
+                ?.toString()
+                ?.trim()
+
+
+        /*
+         * BORROWED and RESERVED cannot be overridden
+         * manually. They are controlled by borrowing
+         * and reservation workflows.
+         */
+        if (operationallyLocked) {
+
+            if (
+                requestedStatus &&
+                requestedStatus != bookCopy.status
+            ) {
+
+                flash.message =
+                    'BORROWED and RESERVED statuses are controlled by the borrowing and reservation workflow.'
+
+                render view: 'edit',
+                    model: editModel(bookCopy)
+
+                return
+            }
+
+        } else if (requestedStatus) {
+
+            List<String> allowedManualStatuses = [
+                'AVAILABLE',
+                'LOST',
+                'DAMAGED'
+            ]
+
+            if (
+                !allowedManualStatuses
+                    .contains(requestedStatus)
+            ) {
+
+                flash.message =
+                    'Invalid book copy status.'
+
+                render view: 'edit',
+                    model: editModel(bookCopy)
+
+                return
+            }
+
+            bookCopy.status =
+                requestedStatus
+        }
+
 
         try {
 
@@ -111,11 +297,8 @@ class BookCopyController {
             flash.message =
                 'Book copy could not be updated. Please fix the errors below.'
 
-            respond bookCopy.errors,
-                view: 'edit',
-                model: [
-                    bookList: Book.list(sort: 'title')
-                ]
+            render view: 'edit',
+                model: editModel(bookCopy)
 
             return
         }
@@ -127,18 +310,31 @@ class BookCopyController {
                  id: bookCopy.id
     }
 
-    def delete(Long id) {
 
-        if (id == null) {
-            notFound()
-            return
-        }
+    def delete(Long id) {
 
         BookCopy bookCopy =
             bookCopyService.get(id)
 
         if (!bookCopy) {
             notFound()
+            return
+        }
+
+        if (
+            hasHistory(bookCopy) ||
+            bookCopy.status in [
+                'BORROWED',
+                'RESERVED'
+            ]
+        ) {
+
+            flash.message =
+                'This physical copy cannot be deleted because it is used by the circulation history.'
+
+            redirect action: 'show',
+                     id: bookCopy.id
+
             return
         }
 
@@ -149,6 +345,80 @@ class BookCopyController {
 
         redirect action: 'index'
     }
+
+
+    private boolean hasHistory(
+        BookCopy bookCopy
+    ) {
+
+        Borrowing.countByBookCopy(bookCopy) > 0 ||
+        Reservation.countByAssignedCopy(bookCopy) > 0
+    }
+
+
+    private List<Book> activeBookList() {
+
+        Book.findAllByActive(
+            true,
+            [
+                sort : 'title',
+                order: 'asc'
+            ]
+        )
+    }
+
+
+    private Map editModel(
+        BookCopy bookCopy
+    ) {
+
+        boolean history =
+            hasHistory(bookCopy)
+
+        boolean operationallyLocked =
+            bookCopy.status in [
+                'BORROWED',
+                'RESERVED'
+            ]
+
+        List<Book> books =
+            activeBookList()
+
+        if (
+            bookCopy.book &&
+            !books*.id.contains(bookCopy.book.id)
+        ) {
+
+            books.add(bookCopy.book)
+
+            books =
+                books.sort {
+                    it.title?.toLowerCase()
+                }
+        }
+
+        [
+            bookCopy:
+                bookCopy,
+
+            bookList:
+                books,
+
+            canChangeBook:
+                !history &&
+                bookCopy.status == 'AVAILABLE',
+
+            statusEditable:
+                !operationallyLocked,
+
+            statusOptions: [
+                'AVAILABLE',
+                'LOST',
+                'DAMAGED'
+            ]
+        ]
+    }
+
 
     protected void notFound() {
 
