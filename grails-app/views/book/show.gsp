@@ -591,7 +591,7 @@
 
                             <!-- CAN RESERVE -->
 
-                            <g:elseif test="${physicalCopyCount > 0}">
+                            <g:if test="${!currentReservation && physicalCopyCount > 0}">
 
                                 <g:if test="${hasActiveMembership}">
 
@@ -631,7 +631,7 @@
 
                                 <!-- NO MEMBERSHIP -->
 
-                                <g:else>
+                                <g:if test="${!hasActiveMembership}">
 
                                     <p class="text-muted">
 
@@ -651,15 +651,15 @@
 
                                     </g:link>
 
-                                </g:else>
+                                </g:if>
 
-                            </g:elseif>
+                            </g:if>
 
 
 
                             <!-- NO LENDING COPIES -->
 
-                            <g:else>
+                            <g:if test="${!currentReservation && physicalCopyCount <= 0}">
 
                                 <p class="text-muted mb-0">
 
@@ -668,7 +668,7 @@
 
                                 </p>
 
-                            </g:else>
+                            </g:if>
 
                         </div>
 

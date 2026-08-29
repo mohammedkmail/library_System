@@ -223,9 +223,13 @@ class AuthorController {
 
     private boolean isAdmin(User user) {
 
-        user?.authorities
-            *.authority
-            .contains('ROLE_ADMIN')
+    if (!user) {
+        return false
+    }
+
+    return user.authorities?.any {
+        it.authority == 'ROLE_ADMIN'
+    } ?: false
     }
 
     protected void notFound() {

@@ -447,7 +447,7 @@
          USER VIEW
     ====================================================== -->
 
-    <g:else>
+    <g:if test="${!isAdmin}">
 
         <g:if test="${borrowingList}">
 
@@ -597,7 +597,7 @@
 
         </g:else>
 
-    </g:else>
+    </g:if>
 
 </div>
 

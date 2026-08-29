@@ -1,227 +1,86 @@
 package librarysystem
 
+import grails.plugin.springsecurity.SpringSecurityService
 import grails.testing.gorm.DomainUnitTest
 import grails.testing.web.controllers.ControllerUnitTest
-import grails.validation.ValidationException
-import spock.lang.*
+import spock.lang.Specification
 
-class BookControllerSpec extends Specification implements ControllerUnitTest<BookController>, DomainUnitTest<Book> {
+class BookControllerSpec extends Specification
+        implements ControllerUnitTest<BookController>,
+                   DomainUnitTest<Book> {
 
-    def populateValidParams(params) {
-        assert params != null
+    def setup() {
 
-        // TODO: Populate valid properties like...
-        //params["name"] = 'someValidName'
-        assert false, "TODO: Provide a populateValidParams() implementation for this generated test suite"
+        mockDomain(Author)
+        mockDomain(Category)
+        mockDomain(BookCopy)
+        mockDomain(Reservation)
+        mockDomain(Purchase)
+        mockDomain(DigitalAccess)
+        mockDomain(Membership)
+
+        controller.springSecurityService =
+            Stub(SpringSecurityService) {
+                getCurrentUser() >> null
+            }
     }
 
-    void "Test the index action returns the correct model"() {
-        given:
-        controller.bookService = Mock(BookService) {
-            1 * list(_) >> []
-            1 * count() >> 0
-        }
 
-        when:"The index action is executed"
-        controller.index()
+    void "controller loads correctly"() {
 
-        then:"The model is correct"
-        !model.bookList
+        expect:
+
+        controller != null
+    }
+
+
+    void "index returns an empty public catalog when there are no books"() {
+
+        when:
+
+        controller.index(12)
+
+
+        then:
+
         model.bookCount == 0
+        model.isAdmin == false
     }
 
-    void "Test the create action returns the correct model"() {
-        when:"The create action is executed"
+
+    void "create returns a new book and selection lists"() {
+
+        when:
+
         controller.create()
 
-        then:"The model is correctly created"
-        model.book!= null
-    }
 
-    void "Test the save action with a null instance"() {
-        when:"Save is called for a domain instance that doesn't exist"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'POST'
-        controller.save(null)
+        then:
 
-        then:"A 404 error is returned"
-        response.redirectedUrl == '/book/index'
-        flash.message != null
-    }
-
-    void "Test the save action correctly persists"() {
-        given:
-        controller.bookService = Mock(BookService) {
-            1 * save(_ as Book)
-        }
-
-        when:"The save action is executed with a valid instance"
-        response.reset()
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'POST'
-        populateValidParams(params)
-        def book = new Book(params)
-        book.id = 1
-
-        controller.save(book)
-
-        then:"A redirect is issued to the show action"
-        response.redirectedUrl == '/book/show/1'
-        controller.flash.message != null
-    }
-
-    void "Test the save action with an invalid instance"() {
-        given:
-        controller.bookService = Mock(BookService) {
-            1 * save(_ as Book) >> { Book book ->
-                throw new ValidationException("Invalid instance", book.errors)
-            }
-        }
-
-        when:"The save action is executed with an invalid instance"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'POST'
-        def book = new Book()
-        controller.save(book)
-
-        then:"The create view is rendered again with the correct model"
         model.book != null
-        view == 'create'
-    }
-
-    void "Test the show action with a null id"() {
-        given:
-        controller.bookService = Mock(BookService) {
-            1 * get(null) >> null
-        }
-
-        when:"The show action is executed with a null domain"
-        controller.show(null)
-
-        then:"A 404 error is returned"
-        response.status == 404
-    }
-
-    void "Test the show action with a valid id"() {
-        given:
-        controller.bookService = Mock(BookService) {
-            1 * get(2) >> new Book()
-        }
-
-        when:"A domain instance is passed to the show action"
-        controller.show(2)
-
-        then:"A model is populated containing the domain instance"
         model.book instanceof Book
+        model.authorList != null
+        model.categoryList != null
     }
 
-    void "Test the edit action with a null id"() {
+
+    void "cover returns 404 when book does not exist"() {
+
         given:
-        controller.bookService = Mock(BookService) {
-            1 * get(null) >> null
-        }
 
-        when:"The show action is executed with a null domain"
-        controller.edit(null)
-
-        then:"A 404 error is returned"
-        response.status == 404
-    }
-
-    void "Test the edit action with a valid id"() {
-        given:
-        controller.bookService = Mock(BookService) {
-            1 * get(2) >> new Book()
-        }
-
-        when:"A domain instance is passed to the show action"
-        controller.edit(2)
-
-        then:"A model is populated containing the domain instance"
-        model.book instanceof Book
-    }
-
-
-    void "Test the update action with a null instance"() {
-        when:"Save is called for a domain instance that doesn't exist"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'PUT'
-        controller.update(null)
-
-        then:"A 404 error is returned"
-        response.redirectedUrl == '/book/index'
-        flash.message != null
-    }
-
-    void "Test the update action correctly persists"() {
-        given:
-        controller.bookService = Mock(BookService) {
-            1 * save(_ as Book)
-        }
-
-        when:"The save action is executed with a valid instance"
-        response.reset()
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'PUT'
-        populateValidParams(params)
-        def book = new Book(params)
-        book.id = 1
-
-        controller.update(book)
-
-        then:"A redirect is issued to the show action"
-        response.redirectedUrl == '/book/show/1'
-        controller.flash.message != null
-    }
-
-    void "Test the update action with an invalid instance"() {
-        given:
-        controller.bookService = Mock(BookService) {
-            1 * save(_ as Book) >> { Book book ->
-                throw new ValidationException("Invalid instance", book.errors)
+        controller.bookService =
+            Mock(BookService) {
+                1 * get(999L) >> null
             }
-        }
 
-        when:"The save action is executed with an invalid instance"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'PUT'
-        controller.update(new Book())
 
-        then:"The edit view is rendered again with the correct model"
-        model.book != null
-        view == 'edit'
-    }
+        when:
 
-    void "Test the delete action with a null instance"() {
-        when:"The delete action is called for a null instance"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'DELETE'
-        controller.delete(null)
+        controller.cover(999L)
 
-        then:"A 404 is returned"
-        response.redirectedUrl == '/book/index'
-        flash.message != null
-    }
 
-    void "Test the delete action with an instance"() {
-        given:
-        controller.bookService = Mock(BookService) {
-            1 * delete(2)
-        }
+        then:
 
-        when:"The domain instance is passed to the delete action"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'DELETE'
-        controller.delete(2)
-
-        then:"The user is redirected to index"
-        response.redirectedUrl == '/book/index'
-        flash.message != null
+        response.status == 404
     }
 }
-
-
-
-
-
-

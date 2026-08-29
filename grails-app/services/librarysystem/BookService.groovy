@@ -6,26 +6,32 @@ import grails.validation.ValidationException
 @Transactional
 class BookService {
 
+    /** Retrieves a book by ID. */
     Book get(Serializable id) {
         Book.get(id)
     }
 
+    /** Returns a list of books based on the provided options. */
     List<Book> list(Map args) {
         Book.list(args)
     }
 
+    /** Returns the total number of books. */
     Long count() {
         Book.count()
     }
 
+    /** Finds books with titles matching the provided value. */
     List<Book> findAllByTitleIlike(String title, Map args) {
         Book.findAllByTitleIlike(title, args)
     }
 
+    /** Counts books with titles matching the provided value. */
     Long countByTitleIlike(String title) {
         Book.countByTitleIlike(title)
     }
 
+    /** Saves or updates a book after validating business rules. */
     Book save(Book book) {
 
         validateBusinessRules(book)
@@ -42,6 +48,7 @@ class BookService {
         book
     }
 
+    /** Deletes a book by ID if it exists. */
     void delete(Serializable id) {
 
         Book book = Book.get(id)
@@ -51,6 +58,7 @@ class BookService {
         }
     }
 
+    /** Validates business rules related to digital book options. */
     private void validateBusinessRules(Book book) {
 
         if (!book.digitalAvailable) {

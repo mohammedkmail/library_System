@@ -488,7 +488,11 @@
                         var="category"
                         status="i">
 
-                        <div class="sl-category-pill">
+                        <g:link
+                            controller="category"
+                            action="show"
+                            id="${category.id}"
+                            class="sl-category-pill">
 
                             <span class="sl-category-number">
                                 ${String.format('%02d', i + 1)}
@@ -498,9 +502,9 @@
                                 ${category.name}
                             </span>
 
-                            <i class="bi bi-book"></i>
+                            <i class="bi bi-arrow-up-right"></i>
 
-                        </div>
+                        </g:link>
 
                     </g:each>
 

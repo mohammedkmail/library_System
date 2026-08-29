@@ -62,4 +62,18 @@
 
                 <button
                     class="btn btn-danger"
-                    type="
+                    type="submit"
+                    onclick="return confirm('Are you sure you want to delete this study room?');">
+                    Delete
+                </button>
+
+            </g:form>
+
+        </div>
+
+    </sec:ifAnyGranted>
+
+</div>
+
+</body>
+</html>

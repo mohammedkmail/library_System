@@ -127,21 +127,20 @@ hibernate:
 dataSource:
     pooled: true
     jmxExport: true
-    driverClassName: com.mysql.cj.jdbc.Driver
-    username: libraryuser
-    password: ''
-    url: jdbc:mysql://localhost:3306/library_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
 
 environments:
 
     development:
         dataSource:
             dbCreate: update
-            url: jdbc:mysql://localhost:3306/library_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+            driverClassName: com.mysql.cj.jdbc.Driver
+            username: libraryuser
+            password: ''
+            url: jdbc:mysql://localhost:3306/ubs_training?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
 
     test:
         dataSource:
-            dbCreate: update
+            dbCreate: create-drop
             driverClassName: org.h2.Driver
             username: sa
             password: ''
@@ -150,7 +149,10 @@ environments:
     production:
         dataSource:
             dbCreate: none
-            url: jdbc:h2:./prodDb;LOCK_TIMEOUT=10000;DB_CLOSE_ON_EXIT=FALSE
+            driverClassName: com.mysql.cj.jdbc.Driver
+            username: '${DB_USERNAME:libraryuser}'
+            password: '${DB_PASSWORD:}'
+            url: '${DB_URL:jdbc:mysql://localhost:3306/ubs_training?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}'
 
             properties:
                 jmxEnabled: true

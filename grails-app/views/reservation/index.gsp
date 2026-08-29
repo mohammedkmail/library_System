@@ -328,7 +328,7 @@
          USER
     ====================================================== -->
 
-    <g:else>
+    <g:if test="${!isAdmin}">
 
         <g:if test="${reservationList}">
 
@@ -516,7 +516,7 @@
 
         </g:else>
 
-    </g:else>
+    </g:if>
 
 </div>
 

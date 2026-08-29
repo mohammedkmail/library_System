@@ -7,18 +7,22 @@ class PurchaseService {
 
     DigitalAccessService digitalAccessService
 
+    /** Retrieves a purchase by ID. */
     Purchase get(Serializable id) {
         Purchase.get(id)
     }
 
+    /** Returns a list of purchases based on the provided options. */
     List<Purchase> list(Map params = [:]) {
         Purchase.list(params)
     }
 
+    /** Returns the total number of purchases. */
     Long count() {
         Purchase.count()
     }
 
+    /** Creates a physical or digital purchase for a user. */
     Purchase createPurchase(
         User user,
         Book book,
@@ -165,6 +169,7 @@ class PurchaseService {
         purchase
     }
 
+    /** Returns the total value of completed purchases. */
     BigDecimal totalSales() {
 
         List<Purchase> purchases =
@@ -177,6 +182,7 @@ class PurchaseService {
         } ?: BigDecimal.ZERO
     }
 
+    /** Returns the number of completed purchases. */
     Long countCompletedPurchases() {
         Purchase.countByStatus(
             'COMPLETED'

@@ -535,17 +535,33 @@ class BookController {
 
     private boolean isAdmin(User user) {
 
-        user?.authorities
-            *.authority
-            .contains('ROLE_ADMIN')
+        if (user == null) {
+            return false
+        }
+
+        for (def role : user.authorities) {
+            if (role.authority == 'ROLE_ADMIN') {
+                return true
+            }
+        }
+
+        return false
     }
 
 
     private boolean isLibraryUser(User user) {
 
-        user?.authorities
-            *.authority
-            .contains('ROLE_USER')
+        if (user == null) {
+            return false
+        }
+
+        for (def role : user.authorities) {
+            if (role.authority == 'ROLE_USER') {
+                return true
+            }
+        }
+
+        return false
     }
 
 

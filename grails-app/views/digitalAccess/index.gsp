@@ -255,7 +255,7 @@
          USER DIGITAL LIBRARY
     ====================================================== -->
 
-    <g:else>
+    <g:if test="${!isAdmin}">
 
         <g:if test="${digitalLibraryItems}">
 
@@ -470,7 +470,7 @@
 
         </g:else>
 
-    </g:else>
+    </g:if>
 
 </div>
 

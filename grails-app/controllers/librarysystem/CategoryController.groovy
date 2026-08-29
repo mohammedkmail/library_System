@@ -84,11 +84,6 @@ class CategoryController {
         boolean admin =
             isAdmin(currentUser)
 
-        /*
-         * Inactive categories remain visible
-         * to admins for management/history,
-         * but not to normal visitors.
-         */
         if (
             category.active != true &&
             !admin
@@ -229,10 +224,6 @@ class CategoryController {
         Long bookCount =
             Book.countByCategory(category)
 
-        /*
-         * Preserve category history when books
-         * are already associated with it.
-         */
         if (bookCount > 0) {
 
             category.active = false
@@ -256,9 +247,13 @@ class CategoryController {
 
     private boolean isAdmin(User user) {
 
-        user?.authorities
-            *.authority
-            .contains('ROLE_ADMIN')
+        if (!user) {
+            return false
+        }
+
+        return user.authorities?.any {
+            it.authority == 'ROLE_ADMIN'
+        } ?: false
     }
 
     protected void notFound() {

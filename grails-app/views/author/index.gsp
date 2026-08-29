@@ -232,7 +232,7 @@
              PUBLIC / USER VIEW
         ================================================== -->
 
-        <g:else>
+        <g:if test="${!isAdmin}">
 
             <g:if test="${authorList}">
 
@@ -338,7 +338,7 @@
 
             </g:else>
 
-        </g:else>
+        </g:if>
 
 
 
