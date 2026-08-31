@@ -3,16 +3,11 @@ package librarysystem
 import grails.testing.web.controllers.ControllerUnitTest
 import spock.lang.Specification
 
-class RegisterControllerSpec extends Specification implements ControllerUnitTest<RegisterController> {
+class RegisterControllerSpec extends Specification
+        implements ControllerUnitTest<RegisterController> {
 
-    def setup() {
-    }
-
-    def cleanup() {
-    }
-
-    void "test something"() {
-        expect:"fix me"
-            true == false
+    void "controller should be created"() {
+        expect:
+        controller != null
     }
 }

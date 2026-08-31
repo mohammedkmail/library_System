@@ -42,66 +42,69 @@ class BookController {
         List<Book> bookList
         Long bookCount
 
-        Map queryOptions = [
-            max   : pageSize,
-            offset: offset,
-            sort  : 'title',
-            order : 'asc'
-        ]
 
+        if (search) {
 
-        if (admin) {
+            String searchPattern =
+                "%${search.toLowerCase()}%"
 
-            if (search) {
+            String visibilityClause =
+                admin ? '' : 'b.active = true and '
 
-                bookList =
-                    Book.findAllByTitleIlike(
-                        "%${search}%",
-                        queryOptions
-                    )
+            String fromWhere = """
+                from Book b
+                where ${visibilityClause}(
+                    lower(b.title) like :search or
+                    lower(b.isbn) like :search or
+                    lower(b.author.name) like :search or
+                    lower(b.category.name) like :search
+                )
+            """
 
-                bookCount =
-                    Book.countByTitleIlike(
-                        "%${search}%"
-                    )
+            bookList =
+                Book.executeQuery(
+                    "${fromWhere} order by b.title asc",
+                    [search: searchPattern],
+                    [
+                        max   : pageSize,
+                        offset: offset
+                    ]
+                )
 
-            } else {
+            bookCount =
+                Book.executeQuery(
+                    "select count(b.id) ${fromWhere}",
+                    [search: searchPattern]
+                )[0] as Long
 
-                bookList =
-                    Book.list(queryOptions)
+        } else if (admin) {
 
-                bookCount =
-                    Book.count()
-            }
+            bookList =
+                Book.list(
+                    max: pageSize,
+                    offset: offset,
+                    sort: 'title',
+                    order: 'asc'
+                )
+
+            bookCount =
+                Book.count()
 
         } else {
 
-            if (search) {
+            bookList =
+                Book.findAllByActive(
+                    true,
+                    [
+                        max   : pageSize,
+                        offset: offset,
+                        sort  : 'title',
+                        order : 'asc'
+                    ]
+                )
 
-                bookList =
-                    Book.findAllByActiveAndTitleIlike(
-                        true,
-                        "%${search}%",
-                        queryOptions
-                    )
-
-                bookCount =
-                    Book.countByActiveAndTitleIlike(
-                        true,
-                        "%${search}%"
-                    )
-
-            } else {
-
-                bookList =
-                    Book.findAllByActive(
-                        true,
-                        queryOptions
-                    )
-
-                bookCount =
-                    Book.countByActive(true)
-            }
+            bookCount =
+                Book.countByActive(true)
         }
 
 
