@@ -15,7 +15,6 @@
 
 <div class="container py-5">
 
-
     <g:link action="index"
             class="text-decoration-none d-inline-block mb-4">
 
@@ -77,7 +76,6 @@
             </div>
 
         </div>
-
 
 
         <!-- =================================================
@@ -166,7 +164,6 @@
                     </div>
 
 
-
                     <!-- START -->
 
                     <div class="py-4 border-bottom">
@@ -183,7 +180,7 @@
                             type="datetime-local"
                             name="startTime"
                             id="startTime"
-                            value="${roomReservation?.startTime?.format("yyyy-MM-dd'T'HH:mm")}"
+                            value="${roomReservation?.startTime ? g.formatDate(date: roomReservation.startTime, format: "yyyy-MM-dd'T'HH:mm") : ''}"
                             class="form-control"
                             required/>
 
@@ -197,7 +194,6 @@
                         </div>
 
                     </div>
-
 
 
                     <!-- END -->
@@ -216,7 +212,7 @@
                             type="datetime-local"
                             name="endTime"
                             id="endTime"
-                            value="${roomReservation?.endTime?.format("yyyy-MM-dd'T'HH:mm")}"
+                            value="${roomReservation?.endTime ? g.formatDate(date: roomReservation.endTime, format: "yyyy-MM-dd'T'HH:mm") : ''}"
                             class="form-control"
                             required/>
 
@@ -232,7 +228,6 @@
                     </div>
 
 
-
                     <!-- ERROR -->
 
                     <div id="timeError"
@@ -242,7 +237,6 @@
                         start time.
 
                     </div>
-
 
 
                     <!-- PRICE PREVIEW -->
@@ -297,7 +291,6 @@
                     </div>
 
 
-
                     <div class="mt-4">
 
                         <button type="submit"
@@ -331,7 +324,6 @@
     </div>
 
 </div>
-
 
 
 <script>

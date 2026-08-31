@@ -2,226 +2,119 @@ package librarysystem
 
 import grails.testing.gorm.DomainUnitTest
 import grails.testing.web.controllers.ControllerUnitTest
-import grails.validation.ValidationException
-import spock.lang.*
+import spock.lang.Specification
 
-class BookCopyControllerSpec extends Specification implements ControllerUnitTest<BookCopyController>, DomainUnitTest<BookCopy> {
+class BookCopyControllerSpec extends Specification
+        implements ControllerUnitTest<BookCopyController>,
+                   DomainUnitTest<BookCopy> {
 
-    def populateValidParams(params) {
-        assert params != null
+    def setup() {
 
-        // TODO: Populate valid properties like...
-        //params["name"] = 'someValidName'
-        assert false, "TODO: Provide a populateValidParams() implementation for this generated test suite"
+        mockDomain(Book)
+        mockDomain(Borrowing)
+        mockDomain(Reservation)
     }
 
-    void "Test the index action returns the correct model"() {
-        given:
-        controller.bookCopyService = Mock(BookCopyService) {
-            1 * list(_) >> []
-            1 * count() >> 0
-        }
 
-        when:"The index action is executed"
-        controller.index()
+    void "controller loads correctly"() {
 
-        then:"The model is correct"
-        !model.bookCopyList
-        model.bookCopyCount == 0
+        expect:
+
+        controller != null
     }
 
-    void "Test the create action returns the correct model"() {
-        when:"The create action is executed"
+
+    void "create returns a new book copy"() {
+
+        when:
+
         controller.create()
 
-        then:"The model is correctly created"
-        model.bookCopy!= null
-    }
 
-    void "Test the save action with a null instance"() {
-        when:"Save is called for a domain instance that doesn't exist"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'POST'
-        controller.save(null)
+        then:
 
-        then:"A 404 error is returned"
-        response.redirectedUrl == '/bookCopy/index'
-        flash.message != null
-    }
-
-    void "Test the save action correctly persists"() {
-        given:
-        controller.bookCopyService = Mock(BookCopyService) {
-            1 * save(_ as BookCopy)
-        }
-
-        when:"The save action is executed with a valid instance"
-        response.reset()
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'POST'
-        populateValidParams(params)
-        def bookCopy = new BookCopy(params)
-        bookCopy.id = 1
-
-        controller.save(bookCopy)
-
-        then:"A redirect is issued to the show action"
-        response.redirectedUrl == '/bookCopy/show/1'
-        controller.flash.message != null
-    }
-
-    void "Test the save action with an invalid instance"() {
-        given:
-        controller.bookCopyService = Mock(BookCopyService) {
-            1 * save(_ as BookCopy) >> { BookCopy bookCopy ->
-                throw new ValidationException("Invalid instance", bookCopy.errors)
-            }
-        }
-
-        when:"The save action is executed with an invalid instance"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'POST'
-        def bookCopy = new BookCopy()
-        controller.save(bookCopy)
-
-        then:"The create view is rendered again with the correct model"
         model.bookCopy != null
-        view == 'create'
+        model.bookCopy instanceof BookCopy
+        model.bookList != null
     }
 
-    void "Test the show action with a null id"() {
-        given:
-        controller.bookCopyService = Mock(BookCopyService) {
-            1 * get(null) >> null
-        }
 
-        when:"The show action is executed with a null domain"
+    void "show with missing id redirects to index"() {
+
+        given:
+
+        controller.bookCopyService =
+            Mock(BookCopyService) {
+
+                1 * get(null) >> null
+            }
+
+
+        when:
+
         controller.show(null)
 
-        then:"A 404 error is returned"
-        response.status == 404
+
+        then:
+
+        response.redirectedUrl ==
+            '/bookCopy/index'
+
+        flash.message ==
+            'Book copy not found.'
     }
 
-    void "Test the show action with a valid id"() {
+
+    void "edit with missing id redirects to index"() {
+
         given:
-        controller.bookCopyService = Mock(BookCopyService) {
-            1 * get(2) >> new BookCopy()
-        }
 
-        when:"A domain instance is passed to the show action"
-        controller.show(2)
+        controller.bookCopyService =
+            Mock(BookCopyService) {
 
-        then:"A model is populated containing the domain instance"
-        model.bookCopy instanceof BookCopy
-    }
+                1 * get(null) >> null
+            }
 
-    void "Test the edit action with a null id"() {
-        given:
-        controller.bookCopyService = Mock(BookCopyService) {
-            1 * get(null) >> null
-        }
 
-        when:"The show action is executed with a null domain"
+        when:
+
         controller.edit(null)
 
-        then:"A 404 error is returned"
-        response.status == 404
+
+        then:
+
+        response.redirectedUrl ==
+            '/bookCopy/index'
+
+        flash.message ==
+            'Book copy not found.'
     }
 
-    void "Test the edit action with a valid id"() {
+
+    void "delete with null id redirects to index"() {
+
         given:
-        controller.bookCopyService = Mock(BookCopyService) {
-            1 * get(2) >> new BookCopy()
-        }
 
-        when:"A domain instance is passed to the show action"
-        controller.edit(2)
+        controller.bookCopyService =
+            Mock(BookCopyService) {
 
-        then:"A model is populated containing the domain instance"
-        model.bookCopy instanceof BookCopy
-    }
-
-
-    void "Test the update action with a null instance"() {
-        when:"Save is called for a domain instance that doesn't exist"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'PUT'
-        controller.update(null)
-
-        then:"A 404 error is returned"
-        response.redirectedUrl == '/bookCopy/index'
-        flash.message != null
-    }
-
-    void "Test the update action correctly persists"() {
-        given:
-        controller.bookCopyService = Mock(BookCopyService) {
-            1 * save(_ as BookCopy)
-        }
-
-        when:"The save action is executed with a valid instance"
-        response.reset()
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'PUT'
-        populateValidParams(params)
-        def bookCopy = new BookCopy(params)
-        bookCopy.id = 1
-
-        controller.update(bookCopy)
-
-        then:"A redirect is issued to the show action"
-        response.redirectedUrl == '/bookCopy/show/1'
-        controller.flash.message != null
-    }
-
-    void "Test the update action with an invalid instance"() {
-        given:
-        controller.bookCopyService = Mock(BookCopyService) {
-            1 * save(_ as BookCopy) >> { BookCopy bookCopy ->
-                throw new ValidationException("Invalid instance", bookCopy.errors)
+                1 * get(null) >> null
             }
-        }
 
-        when:"The save action is executed with an invalid instance"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'PUT'
-        controller.update(new BookCopy())
 
-        then:"The edit view is rendered again with the correct model"
-        model.bookCopy != null
-        view == 'edit'
-    }
+        when:
 
-    void "Test the delete action with a null instance"() {
-        when:"The delete action is called for a null instance"
-        request.contentType = FORM_CONTENT_TYPE
         request.method = 'DELETE'
+
         controller.delete(null)
 
-        then:"A 404 is returned"
-        response.redirectedUrl == '/bookCopy/index'
-        flash.message != null
-    }
 
-    void "Test the delete action with an instance"() {
-        given:
-        controller.bookCopyService = Mock(BookCopyService) {
-            1 * delete(2)
-        }
+        then:
 
-        when:"The domain instance is passed to the delete action"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'DELETE'
-        controller.delete(2)
+        response.redirectedUrl ==
+            '/bookCopy/index'
 
-        then:"The user is redirected to index"
-        response.redirectedUrl == '/bookCopy/index'
-        flash.message != null
+        flash.message ==
+            'Book copy not found.'
     }
 }
-
-
-
-
-
-

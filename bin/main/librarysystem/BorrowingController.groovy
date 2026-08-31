@@ -195,9 +195,17 @@ class BorrowingController {
 
     private boolean isAdmin(User user) {
 
-        user?.authorities
-            *.authority
-            .contains('ROLE_ADMIN')
+        if (user == null) {
+            return false
+        }
+
+        for (def role : user.authorities) {
+            if (role.authority == 'ROLE_ADMIN') {
+                return true
+            }
+        }
+
+        return false
     }
 
     protected void notFound() {

@@ -1,9 +1,9 @@
 package librarysystem
 
-import grails.testing.gorm.DomainUnitTest
+import grails.testing.services.ServiceUnitTest
 import spock.lang.Specification
 
-class BorrowingSpec extends Specification implements DomainUnitTest<Borrowing> {
+class RegisterServiceSpec extends Specification implements ServiceUnitTest<RegisterService>{
 
     def setup() {
     }

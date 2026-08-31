@@ -7,18 +7,22 @@ import java.math.RoundingMode
 @Transactional
 class RoomReservationService {
 
+    /** Retrieves a room reservation by ID. */
     RoomReservation get(Serializable id) {
         RoomReservation.get(id)
     }
 
+    /** Returns a list of room reservations based on the provided options. */
     List<RoomReservation> list(Map params = [:]) {
         RoomReservation.list(params)
     }
 
+    /** Returns the total number of room reservations. */
     Long count() {
         RoomReservation.count()
     }
 
+    /** Creates a study room reservation and calculates its total price. */
     RoomReservation createReservation(
         User user,
         StudyRoom studyRoom,
@@ -126,6 +130,7 @@ class RoomReservationService {
         reservation
     }
 
+    /** Cancels a room reservation before its start time. */
     RoomReservation cancelReservation(Long id) {
 
         RoomReservation reservation =
@@ -163,6 +168,7 @@ class RoomReservationService {
         reservation
     }
 
+    /** Marks finished room reservations as completed. */
     void updateCompletedReservations() {
 
         Date now = new Date()
@@ -187,6 +193,7 @@ class RoomReservationService {
         }
     }
 
+    /** Returns the number of currently confirmed room reservations. */
     Long countConfirmedReservations() {
 
         updateCompletedReservations()

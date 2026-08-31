@@ -63,7 +63,27 @@ class RoomReservationController {
 
     def create() {
 
-        respond new RoomReservation()
+        User currentUser =
+            springSecurityService.currentUser as User
+
+        if (isAdmin(currentUser)) {
+            render status: 403
+            return
+        }
+
+        List<StudyRoom> activeRooms =
+            StudyRoom.findAllByActive(
+                true,
+                [
+                    sort : 'roomNumber',
+                    order: 'asc'
+                ]
+            )
+
+        respond new RoomReservation(),
+            model: [
+                activeRooms: activeRooms
+            ]
     }
 
     def save() {
@@ -71,14 +91,27 @@ class RoomReservationController {
         User currentUser =
             springSecurityService.currentUser as User
 
+        if (isAdmin(currentUser)) {
+            render status: 403
+            return
+        }
+
         StudyRoom studyRoom =
-            StudyRoom.get(params.long('studyRoom.id'))
+            StudyRoom.get(
+                params.long('studyRoom.id')
+            )
 
         Date startTime =
-            params.date('startTime', "yyyy-MM-dd'T'HH:mm")
+            params.date(
+                'startTime',
+                "yyyy-MM-dd'T'HH:mm"
+            )
 
         Date endTime =
-           params.date('endTime', "yyyy-MM-dd'T'HH:mm")
+            params.date(
+                'endTime',
+                "yyyy-MM-dd'T'HH:mm"
+            )
 
         try {
 
@@ -103,13 +136,25 @@ class RoomReservationController {
 
             flash.message = e.message
 
+            List<StudyRoom> activeRooms =
+                StudyRoom.findAllByActive(
+                    true,
+                    [
+                        sort : 'roomNumber',
+                        order: 'asc'
+                    ]
+                )
+
             respond new RoomReservation(
                 user: currentUser,
                 studyRoom: studyRoom,
                 startTime: startTime,
                 endTime: endTime
             ),
-            view: 'create'
+            view: 'create',
+            model: [
+                activeRooms: activeRooms
+            ]
         }
     }
 
@@ -159,6 +204,7 @@ class RoomReservationController {
     }
 
     protected void notFound() {
+
         render status: 404
     }
 }

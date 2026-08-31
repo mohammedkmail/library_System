@@ -7,18 +7,22 @@ class DigitalAccessService {
 
     MembershipService membershipService
 
+    /** Retrieves a digital access record by ID. */
     DigitalAccess get(Serializable id) {
         DigitalAccess.get(id)
     }
 
+    /** Returns a list of digital access records based on the provided options. */
     List<DigitalAccess> list(Map params = [:]) {
         DigitalAccess.list(params)
     }
 
+    /** Returns the total number of digital access records. */
     Long count() {
         DigitalAccess.count()
     }
 
+    /** Grants temporary digital rental access to a book. */
     DigitalAccess grantRentalAccess(
         User user,
         Book book,
@@ -75,6 +79,7 @@ class DigitalAccessService {
         access
     }
 
+    /** Grants permanent digital access after purchasing a book. */
     DigitalAccess grantPurchaseAccess(
         User user,
         Book book
@@ -126,6 +131,7 @@ class DigitalAccessService {
         access
     }
 
+    /** Checks whether a user currently has digital access to a book. */
     boolean canAccessBook(
         User user,
         Book book
@@ -175,6 +181,7 @@ class DigitalAccessService {
         return false
     }
 
+    /** Marks expired digital rentals as expired. */
     void expireOldRentals() {
 
         Date now = new Date()

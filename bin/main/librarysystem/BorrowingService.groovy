@@ -8,23 +8,22 @@ class BorrowingService {
     MembershipService membershipService
     ReservationService reservationService
 
+    /** Retrieves a borrowing by ID. */
     Borrowing get(Serializable id) {
         Borrowing.get(id)
     }
 
+    /** Returns a list of borrowings based on the provided options. */
     List<Borrowing> list(Map params = [:]) {
         Borrowing.list(params)
     }
 
+    /** Returns the total number of borrowings. */
     Long count() {
         Borrowing.count()
     }
 
-    /*
-     * Manual borrowing by an admin.
-     * Used when a user comes directly to the library
-     * without a reservation.
-     */
+    /** Creates a manual borrowing for an available book copy. */
     Borrowing borrowBook(
         User user,
         BookCopy bookCopy
@@ -49,10 +48,7 @@ class BorrowingService {
         createBorrowing(user, bookCopy)
     }
 
-    /*
-     * Called by the admin when the user comes
-     * to collect a READY reservation.
-     */
+    /** Creates a borrowing from a reservation that is ready for pickup. */
     Borrowing borrowReservedBook(Long reservationId) {
 
         reservationService.expireReadyReservations()
@@ -114,6 +110,7 @@ class BorrowingService {
         borrowing
     }
 
+    /** Returns a borrowed book and calculates any applicable late fee. */
     Borrowing returnBook(Long id) {
 
         Borrowing borrowing = Borrowing.get(id)
@@ -176,11 +173,6 @@ class BorrowingService {
                 failOnError: true
             )
 
-            /*
-             * If somebody is waiting for the book,
-             * immediately prepare the returned copy
-             * for the next reservation.
-             */
             if (book) {
                 reservationService.assignCopy(
                     book,
@@ -192,6 +184,7 @@ class BorrowingService {
         borrowing
     }
 
+    /** Marks active borrowings as overdue when their due date has passed. */
     void updateOverdueBorrowings() {
 
         Date now = new Date()
@@ -214,6 +207,7 @@ class BorrowingService {
         }
     }
 
+    /** Returns the number of active borrowings. */
     Long countActiveBorrowings() {
 
         updateOverdueBorrowings()
@@ -221,6 +215,7 @@ class BorrowingService {
         Borrowing.countByStatus('ACTIVE')
     }
 
+    /** Returns the number of overdue borrowings. */
     Long countOverdueBorrowings() {
 
         updateOverdueBorrowings()
@@ -228,6 +223,7 @@ class BorrowingService {
         Borrowing.countByStatus('OVERDUE')
     }
 
+    /** Creates a borrowing and marks the book copy as borrowed. */
     private Borrowing createBorrowing(
         User user,
         BookCopy bookCopy
@@ -249,6 +245,7 @@ class BorrowingService {
         borrowing
     }
 
+    /** Creates and saves the borrowing record with a fourteen-day due date. */
     private Borrowing createBorrowingRecord(
         User user,
         BookCopy bookCopy
@@ -256,8 +253,19 @@ class BorrowingService {
 
         Date borrowDate = new Date()
 
+        Calendar dueCalendar =
+            Calendar.getInstance()
+
+        dueCalendar.time =
+            borrowDate
+
+        dueCalendar.add(
+            Calendar.DAY_OF_MONTH,
+            14
+        )
+
         Date dueDate =
-            borrowDate + 14
+            dueCalendar.time
 
         Borrowing borrowing =
             new Borrowing(
@@ -277,6 +285,7 @@ class BorrowingService {
         borrowing
     }
 
+    /** Validates that the user is allowed to borrow books. */
     private void validateBorrower(
         User user
     ) {
@@ -296,6 +305,7 @@ class BorrowingService {
         }
     }
 
+    /** Ensures that the book copy does not already have an open borrowing. */
     private void ensureCopyIsNotBorrowed(
         BookCopy bookCopy
     ) {

@@ -1,227 +1,518 @@
 package librarysystem
 
+import grails.plugin.springsecurity.SpringSecurityService
 import grails.testing.gorm.DomainUnitTest
 import grails.testing.web.controllers.ControllerUnitTest
 import grails.validation.ValidationException
-import spock.lang.*
+import spock.lang.Specification
 
-class AuthorControllerSpec extends Specification implements ControllerUnitTest<AuthorController>, DomainUnitTest<Author> {
+class AuthorControllerSpec extends Specification
+        implements ControllerUnitTest<AuthorController>,
+                   DomainUnitTest<Author> {
+
+    def setup() {
+
+        mockDomain(Book)
+
+        controller.springSecurityService =
+            Stub(SpringSecurityService) {
+                getCurrentUser() >> null
+            }
+    }
+
 
     def populateValidParams(params) {
+
         assert params != null
 
-        // TODO: Populate valid properties like...
-        //params["name"] = 'someValidName'
-        assert false, "TODO: Provide a populateValidParams() implementation for this generated test suite"
+        params.name =
+            'Test Author'
+
+        params.biography =
+            'Test author biography'
     }
 
-    void "Test the index action returns the correct model"() {
+
+    void "Test the index action returns authors and count"() {
+
         given:
-        controller.authorService = Mock(AuthorService) {
-            1 * list(_) >> []
-            1 * count() >> 0
-        }
 
-        when:"The index action is executed"
-        controller.index()
+        new Author(
+            name: 'George Orwell',
+            biography: 'English novelist'
+        ).save(flush: true)
 
-        then:"The model is correct"
-        !model.authorList
-        model.authorCount == 0
+        new Author(
+            name: 'Agatha Christie',
+            biography: 'Mystery writer'
+        ).save(flush: true)
+
+
+        when:
+
+        controller.index(12)
+
+
+        then:
+
+        model.authorList != null
+
+        model.authorList.size() == 2
+
+        model.authorList*.name ==
+            [
+                'Agatha Christie',
+                'George Orwell'
+            ]
+
+        model.authorCount == 2
+
+        model.isAdmin == false
     }
 
-    void "Test the create action returns the correct model"() {
-        when:"The create action is executed"
+
+    void "Test the create action returns a new author"() {
+
+        when:
+
         controller.create()
 
-        then:"The model is correctly created"
-        model.author!= null
+
+        then:
+
+        model.author != null
+
+        model.author instanceof Author
     }
 
-    void "Test the save action with a null instance"() {
-        when:"Save is called for a domain instance that doesn't exist"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'POST'
+
+    void "Test the save action with a null instance redirects to index"() {
+
+        when:
+
+        request.contentType =
+            FORM_CONTENT_TYPE
+
+        request.method =
+            'POST'
+
         controller.save(null)
 
-        then:"A 404 error is returned"
-        response.redirectedUrl == '/author/index'
-        flash.message != null
+
+        then:
+
+        response.redirectedUrl ==
+            '/author/index'
+
+        flash.message ==
+            'Author not found.'
     }
 
-    void "Test the save action correctly persists"() {
-        given:
-        controller.authorService = Mock(AuthorService) {
-            1 * save(_ as Author)
-        }
 
-        when:"The save action is executed with a valid instance"
-        response.reset()
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'POST'
-        populateValidParams(params)
-        def author = new Author(params)
-        author.id = 1
+    void "Test the save action correctly persists through service"() {
+
+        given:
+
+        AuthorService authorService =
+            Mock(AuthorService)
+
+        controller.authorService =
+            authorService
+
+
+        and:
+
+        Author author =
+            new Author(
+                name: 'Test Author',
+                biography: 'Biography'
+            )
+
+        author.id = 1L
+
+
+        when:
+
+        request.contentType =
+            FORM_CONTENT_TYPE
+
+        request.method =
+            'POST'
 
         controller.save(author)
 
-        then:"A redirect is issued to the show action"
-        response.redirectedUrl == '/author/show/1'
-        controller.flash.message != null
+
+        then:
+
+        1 * authorService.save(author)
+
+
+        and:
+
+        response.redirectedUrl ==
+            '/author/show/1'
+
+        flash.message ==
+            'Author created successfully.'
     }
 
-    void "Test the save action with an invalid instance"() {
+
+    void "Test the save action handles validation failure"() {
+
         given:
-        controller.authorService = Mock(AuthorService) {
-            1 * save(_ as Author) >> { Author author ->
-                throw new ValidationException("Invalid instance", author.errors)
+
+        AuthorService authorService =
+            Mock(AuthorService)
+
+        controller.authorService =
+            authorService
+
+
+        and:
+
+        Author author =
+            new Author()
+
+
+        and:
+
+        authorService.save(author) >> {
+            throw new ValidationException(
+                'Invalid instance',
+                author.errors
+            )
+        }
+
+
+        when:
+
+        request.contentType =
+            FORM_CONTENT_TYPE
+
+        request.method =
+            'POST'
+
+        controller.save(author)
+
+
+        then:
+
+        view ==
+            'create'
+
+        flash.message ==
+            'Author could not be created. Please fix the errors below.'
+    }
+
+
+    void "Test the show action with a null id redirects to index"() {
+
+        given:
+
+        controller.authorService =
+            Mock(AuthorService) {
+
+                1 * get(null) >> null
             }
-        }
 
-        when:"The save action is executed with an invalid instance"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'POST'
-        def author = new Author()
-        controller.save(author)
 
-        then:"The create view is rendered again with the correct model"
-        model.author != null
-        view == 'create'
-    }
+        when:
 
-    void "Test the show action with a null id"() {
-        given:
-        controller.authorService = Mock(AuthorService) {
-            1 * get(null) >> null
-        }
-
-        when:"The show action is executed with a null domain"
         controller.show(null)
 
-        then:"A 404 error is returned"
-        response.status == 404
+
+        then:
+
+        response.redirectedUrl ==
+            '/author/index'
+
+        flash.message ==
+            'Author not found.'
     }
 
-    void "Test the show action with a valid id"() {
+
+    void "Test the show action returns an author"() {
+
         given:
-        controller.authorService = Mock(AuthorService) {
-            1 * get(2) >> new Author()
-        }
 
-        when:"A domain instance is passed to the show action"
-        controller.show(2)
+        Author author =
+            new Author(
+                name: 'George Orwell',
+                biography: 'English novelist'
+            ).save(flush: true)
 
-        then:"A model is populated containing the domain instance"
-        model.author instanceof Author
+
+        and:
+
+        controller.authorService =
+            Mock(AuthorService) {
+
+                1 * get(author.id) >> author
+            }
+
+
+        when:
+
+        controller.show(author.id)
+
+
+        then:
+
+        model.author ==
+            author
+
+        model.bookList != null
+
+        model.bookList.isEmpty()
+
+        model.isAdmin == false
     }
 
-    void "Test the edit action with a null id"() {
-        given:
-        controller.authorService = Mock(AuthorService) {
-            1 * get(null) >> null
-        }
 
-        when:"The show action is executed with a null domain"
+    void "Test the edit action with a null id redirects to index"() {
+
+        given:
+
+        controller.authorService =
+            Mock(AuthorService) {
+
+                1 * get(null) >> null
+            }
+
+
+        when:
+
         controller.edit(null)
 
-        then:"A 404 error is returned"
-        response.status == 404
+
+        then:
+
+        response.redirectedUrl ==
+            '/author/index'
+
+        flash.message ==
+            'Author not found.'
     }
 
-    void "Test the edit action with a valid id"() {
+
+    void "Test the edit action returns an author"() {
+
         given:
-        controller.authorService = Mock(AuthorService) {
-            1 * get(2) >> new Author()
-        }
 
-        when:"A domain instance is passed to the show action"
-        controller.edit(2)
+        Author author =
+            new Author(
+                name: 'Agatha Christie',
+                biography: 'Mystery writer'
+            ).save(flush: true)
 
-        then:"A model is populated containing the domain instance"
-        model.author instanceof Author
+
+        and:
+
+        controller.authorService =
+            Mock(AuthorService) {
+
+                1 * get(author.id) >> author
+            }
+
+
+        when:
+
+        controller.edit(author.id)
+
+
+        then:
+
+        model.author ==
+            author
     }
 
 
-    void "Test the update action with a null instance"() {
-        when:"Save is called for a domain instance that doesn't exist"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'PUT'
+    void "Test the update action with a null instance redirects to index"() {
+
+        when:
+
+        request.contentType =
+            FORM_CONTENT_TYPE
+
+        request.method =
+            'PUT'
+
         controller.update(null)
 
-        then:"A 404 error is returned"
-        response.redirectedUrl == '/author/index'
-        flash.message != null
+
+        then:
+
+        response.redirectedUrl ==
+            '/author/index'
+
+        flash.message ==
+            'Author not found.'
     }
 
-    void "Test the update action correctly persists"() {
-        given:
-        controller.authorService = Mock(AuthorService) {
-            1 * save(_ as Author)
-        }
 
-        when:"The save action is executed with a valid instance"
-        response.reset()
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'PUT'
-        populateValidParams(params)
-        def author = new Author(params)
-        author.id = 1
+    void "Test the update action correctly saves through service"() {
+
+        given:
+
+        AuthorService authorService =
+            Mock(AuthorService)
+
+        controller.authorService =
+            authorService
+
+
+        and:
+
+        Author author =
+            new Author(
+                name: 'Updated Author',
+                biography: 'Updated biography'
+            )
+
+        author.id = 1L
+
+
+        when:
+
+        request.contentType =
+            FORM_CONTENT_TYPE
+
+        request.method =
+            'PUT'
 
         controller.update(author)
 
-        then:"A redirect is issued to the show action"
-        response.redirectedUrl == '/author/show/1'
-        controller.flash.message != null
+
+        then:
+
+        1 * authorService.save(author)
+
+
+        and:
+
+        response.redirectedUrl ==
+            '/author/show/1'
+
+        flash.message ==
+            'Author updated successfully.'
     }
 
-    void "Test the update action with an invalid instance"() {
+
+    void "Test the update action handles validation failure"() {
+
         given:
-        controller.authorService = Mock(AuthorService) {
-            1 * save(_ as Author) >> { Author author ->
-                throw new ValidationException("Invalid instance", author.errors)
-            }
+
+        AuthorService authorService =
+            Mock(AuthorService)
+
+        controller.authorService =
+            authorService
+
+
+        and:
+
+        Author author =
+            new Author()
+
+
+        and:
+
+        authorService.save(author) >> {
+            throw new ValidationException(
+                'Invalid instance',
+                author.errors
+            )
         }
 
-        when:"The save action is executed with an invalid instance"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'PUT'
-        controller.update(new Author())
 
-        then:"The edit view is rendered again with the correct model"
-        model.author != null
-        view == 'edit'
+        when:
+
+        request.contentType =
+            FORM_CONTENT_TYPE
+
+        request.method =
+            'PUT'
+
+        controller.update(author)
+
+
+        then:
+
+        view ==
+            'edit'
+
+        flash.message ==
+            'Author could not be updated. Please fix the errors below.'
     }
 
-    void "Test the delete action with a null instance"() {
-        when:"The delete action is called for a null instance"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'DELETE'
+
+    void "Test the delete action with a null id redirects to index"() {
+
+        when:
+
+        request.contentType =
+            FORM_CONTENT_TYPE
+
+        request.method =
+            'DELETE'
+
         controller.delete(null)
 
-        then:"A 404 is returned"
-        response.redirectedUrl == '/author/index'
-        flash.message != null
+
+        then:
+
+        response.redirectedUrl ==
+            '/author/index'
+
+        flash.message ==
+            'Author not found.'
     }
 
-    void "Test the delete action with an instance"() {
+
+    void "Test the delete action deletes author without books"() {
+
         given:
-        controller.authorService = Mock(AuthorService) {
-            1 * delete(2)
-        }
 
-        when:"The domain instance is passed to the delete action"
-        request.contentType = FORM_CONTENT_TYPE
-        request.method = 'DELETE'
-        controller.delete(2)
+        Author author =
+            new Author(
+                name: 'Delete Author',
+                biography: 'Temporary author'
+            ).save(flush: true)
 
-        then:"The user is redirected to index"
-        response.redirectedUrl == '/author/index'
-        flash.message != null
+
+        and:
+
+        AuthorService authorService =
+            Mock(AuthorService)
+
+        controller.authorService =
+            authorService
+
+
+        when:
+
+        request.contentType =
+            FORM_CONTENT_TYPE
+
+        request.method =
+            'DELETE'
+
+        controller.delete(author.id)
+
+
+        then:
+
+        1 * authorService.get(author.id) >> author
+
+        1 * authorService.delete(author.id)
+
+
+        and:
+
+        response.redirectedUrl ==
+            '/author/index'
+
+        flash.message ==
+            'Author deleted successfully.'
     }
 }
-
-
-
-
-
-

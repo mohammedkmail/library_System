@@ -3,7 +3,7 @@ package librarysystem
 import grails.testing.services.ServiceUnitTest
 import spock.lang.Specification
 
-class MembershipServiceSpec extends Specification implements ServiceUnitTest<MembershipService>{
+class RegisterServiceSpec extends Specification implements ServiceUnitTest<RegisterService>{
 
     def setup() {
     }

@@ -7,18 +7,22 @@ class ReservationService {
 
     MembershipService membershipService
 
+    /** Retrieves a reservation by ID. */
     Reservation get(Serializable id) {
         Reservation.get(id)
     }
 
+    /** Returns a list of reservations based on the provided options. */
     List<Reservation> list(Map params = [:]) {
         Reservation.list(params)
     }
 
+    /** Returns the total number of reservations. */
     Long count() {
         Reservation.count()
     }
 
+    /** Creates a waiting reservation for a book. */
     Reservation createReservation(
         User user,
         Book book
@@ -82,6 +86,7 @@ class ReservationService {
         reservation
     }
 
+    /** Returns the next waiting reservation for a book. */
     Reservation getNextWaitingReservation(
         Book book
     ) {
@@ -96,10 +101,7 @@ class ReservationService {
         )
     }
 
-    /*
-     * Used automatically when a physical copy
-     * becomes available, for example after return.
-     */
+    /** Assigns an available book copy to the next waiting reservation. */
     Reservation assignCopy(
         Book book,
         BookCopy bookCopy
@@ -123,10 +125,7 @@ class ReservationService {
         )
     }
 
-    /*
-     * Used by the admin when preparing
-     * a specific waiting reservation.
-     */
+    /** Assigns a specific book copy to a waiting reservation. */
     Reservation assignCopyToReservation(
         Long reservationId,
         Long bookCopyId
@@ -167,10 +166,7 @@ class ReservationService {
         )
     }
 
-    /*
-     * This method only closes the reservation.
-     * BorrowingService creates the actual borrowing first.
-     */
+    /** Marks a ready reservation as fulfilled. */
     Reservation fulfillReservation(Long id) {
 
         Reservation reservation =
@@ -202,6 +198,7 @@ class ReservationService {
         reservation
     }
 
+    /** Cancels a reservation and releases its assigned copy. */
     Reservation cancelReservation(Long id) {
 
         Reservation reservation =
@@ -244,10 +241,6 @@ class ReservationService {
                 failOnError: true
             )
 
-            /*
-             * Give the copy to the next
-             * person waiting for the same book.
-             */
             assignCopy(
                 book,
                 releasedCopy
@@ -257,6 +250,7 @@ class ReservationService {
         reservation
     }
 
+    /** Expires ready reservations whose pickup period has passed. */
     void expireReadyReservations() {
 
         Date now = new Date()
@@ -295,10 +289,6 @@ class ReservationService {
                     failOnError: true
                 )
 
-                /*
-                 * Pass the released copy
-                 * to the next waiting user.
-                 */
                 assignCopy(
                     book,
                     releasedCopy
@@ -307,6 +297,7 @@ class ReservationService {
         }
     }
 
+    /** Returns the number of reservations currently waiting for a copy. */
     Long countWaitingReservations() {
 
         expireReadyReservations()
@@ -316,6 +307,7 @@ class ReservationService {
         )
     }
 
+    /** Prepares a reservation and marks its assigned copy as reserved. */
     private Reservation prepareReservation(
         Reservation reservation,
         BookCopy bookCopy
@@ -327,9 +319,6 @@ class ReservationService {
         reservation.status =
             'READY'
 
-        /*
-         * User has one day to collect it.
-         */
         reservation.readyUntil =
             new Date() + 1
 
@@ -349,6 +338,7 @@ class ReservationService {
         reservation
     }
 
+    /** Validates that a book copy is available and belongs to the book. */
     private void validateAvailableCopy(
         Book book,
         BookCopy bookCopy

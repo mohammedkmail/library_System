@@ -1,9 +1,9 @@
 package librarysystem
 
-import grails.testing.services.ServiceUnitTest
+import grails.testing.web.controllers.ControllerUnitTest
 import spock.lang.Specification
 
-class ReservationServiceSpec extends Specification implements ServiceUnitTest<ReservationService>{
+class RegisterControllerSpec extends Specification implements ControllerUnitTest<RegisterController> {
 
     def setup() {
     }

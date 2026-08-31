@@ -209,6 +209,9 @@ grails:
                     - pattern: /index.gsp
                       access: ['permitAll']
 
+                    - pattern: '/register/**'
+                      access: ['permitAll']
+
                     - pattern: /shutdown
                       access: ['permitAll']
 
