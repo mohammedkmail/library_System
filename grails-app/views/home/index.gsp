@@ -142,7 +142,7 @@
         <a href="#homeContentStart"
            class="mn-hero-scroll-cue"
            aria-label="انتقل إلى محتوى الصفحة">
-            <i class="bi bi-chevron-down"></i>
+            <i class="bi bi-chevron-up"></i>
         </a>
 
     </section>
@@ -396,72 +396,6 @@
 
 
     <!-- =========================================================
-         CATEGORIES
-    ========================================================== -->
-    <section class="mn-home-section mn-categories-section">
-        <div class="container">
-            <div class="mn-section-heading">
-                <div>
-                    <span class="mn-section-kicker">ابدأ من اهتمامك</span>
-                    <h2>الأقسام الرئيسية</h2>
-                </div>
-
-                <g:link controller="category" action="index" class="mn-section-link">
-                    عرض جميع الأقسام
-                    <i class="bi bi-arrow-left"></i>
-                </g:link>
-            </div>
-
-            <g:set var="categoryIcons"
-                   value="${['bi-book','bi-lightbulb','bi-clock-history','bi-bank','bi-buildings','bi-person-arms-up','bi-heart','bi-palette']}"/>
-
-            <div class="mn-horizontal-wrap">
-                <button type="button"
-                        class="mn-scroll-control prev"
-                        data-scroll-target="#homeCategories"
-                        data-scroll-direction="-1"
-                        aria-label="السابق">
-                    <i class="bi bi-chevron-right"></i>
-                </button>
-
-                <div class="mn-category-grid" id="homeCategories">
-                    <g:if test="${featuredCategories}">
-                        <g:each in="${featuredCategories}" var="categoryData" status="index">
-                            <g:link controller="category"
-                                    action="show"
-                                    id="${categoryData.category.id}"
-                                    class="mn-category-card">
-
-                                <span class="mn-category-icon category-${(index % 8) + 1}">
-                                    <i class="bi ${categoryIcons[index % categoryIcons.size()]}"></i>
-                                </span>
-
-                                <strong dir="auto">${categoryData.category.name}</strong>
-                                <small>${categoryData.bookCount ?: 0} كتاب</small>
-                            </g:link>
-                        </g:each>
-                    </g:if>
-                    <g:else>
-                        <div class="mn-empty-state wide">
-                            <i class="bi bi-grid"></i>
-                            <strong>لا توجد أقسام مفعلة بعد</strong>
-                        </div>
-                    </g:else>
-                </div>
-
-                <button type="button"
-                        class="mn-scroll-control next"
-                        data-scroll-target="#homeCategories"
-                        data-scroll-direction="1"
-                        aria-label="التالي">
-                    <i class="bi bi-chevron-left"></i>
-                </button>
-            </div>
-        </div>
-    </section>
-
-
-    <!-- =========================================================
          POPULAR BOOKS
     ========================================================== -->
     <section class="mn-home-section mn-books-section">
@@ -648,45 +582,55 @@
 
 
     <!-- =========================================================
-         AUTHORS
+         VISIT GUIDE
     ========================================================== -->
-    <section class="mn-home-section mn-authors-section">
+    <section class="mn-home-section mn-visit-section">
         <div class="container">
             <div class="mn-section-heading">
                 <div>
-                    <span class="mn-section-kicker">أسماء من مجموعتنا</span>
-                    <h2>أبرز المؤلفين</h2>
+                    <span class="mn-section-kicker">قبل ما تبدأ</span>
+                    <h2>استخدم المكتبة بطريقتك</h2>
+                    <p>ثلاث خطوات واضحة بدون قوائم طويلة أو إجراءات مخفية.</p>
                 </div>
-
-                <g:link controller="author" action="index" class="mn-section-link">
-                    عرض جميع المؤلفين
-                    <i class="bi bi-arrow-left"></i>
-                </g:link>
             </div>
 
-            <div class="mn-author-grid">
-                <g:if test="${popularAuthors}">
-                    <g:each in="${popularAuthors}" var="authorData" status="index">
-                        <g:link controller="author"
-                                action="show"
-                                id="${authorData.author.id}"
-                                class="mn-author-card">
+            <div class="mn-visit-grid">
+                <g:link controller="book" action="index" class="mn-visit-card">
+                    <span class="mn-visit-number">01</span>
+                    <i class="bi bi-search"></i>
+                    <strong>دوّر على كتابك</strong>
+                    <small>ابحث بالعنوان أو المؤلف أو القسم، وشوف النسخ والخدمات المتاحة مباشرة.</small>
+                </g:link>
 
-                            <span class="mn-author-avatar author-${(index % 6) + 1}">
-                                ${authorData.author.name?.trim()?.take(1) ?: 'م'}
-                            </span>
+                <sec:ifLoggedIn>
+                    <g:link controller="roomReservation" action="create" class="mn-visit-card">
+                        <span class="mn-visit-number">02</span>
+                        <i class="bi bi-door-open"></i>
+                        <strong>احجز غرفة وادفع</strong>
+                        <small>اختَر الوقت والغرفة، ثم أكمل الدفع التجريبي لتأكيد الموعد.</small>
+                    </g:link>
+                </sec:ifLoggedIn>
+                <sec:ifNotLoggedIn>
+                    <g:link controller="register" action="create" class="mn-visit-card">
+                        <span class="mn-visit-number">02</span>
+                        <i class="bi bi-person-plus"></i>
+                        <strong>افتح حسابك</strong>
+                        <small>الحساب هو مفتاح الحجز والاستعارة والشراء والمكتبة الرقمية.</small>
+                    </g:link>
+                </sec:ifNotLoggedIn>
 
-                            <strong dir="auto">${authorData.author.name}</strong>
-                            <small>${authorData.bookCount ?: 0} كتاب</small>
-                        </g:link>
-                    </g:each>
-                </g:if>
-                <g:else>
-                    <div class="mn-empty-state wide">
-                        <i class="bi bi-pen"></i>
-                        <strong>لا يوجد مؤلفون لعرضهم بعد</strong>
-                    </div>
-                </g:else>
+                <div class="mn-visit-card static">
+                    <span class="mn-visit-number">03</span>
+                    <i class="bi bi-calendar2-check"></i>
+                    <strong>مفتوح طوال الأسبوع</strong>
+                    <small>لا يوجد إغلاق أسبوعي ثابت؛ الحجز يتوقف تلقائياً فقط في العطل المسجلة.</small>
+                    <g:if test="${upcomingHolidays}">
+                        <span class="mn-next-holiday">
+                            أقرب عطلة: ${upcomingHolidays[0].name} —
+                            <g:formatDate date="${upcomingHolidays[0].date}" format="dd/MM/yyyy"/>
+                        </span>
+                    </g:if>
+                </div>
             </div>
         </div>
     </section>

@@ -1,380 +1,47 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
 <head>
-
-    <meta name="layout"
-          content="main"/>
-
-    <title>Categories</title>
-
+    <meta name="layout" content="main"/>
+    <title>الأقسام | المنارة</title>
 </head>
-
 <body>
-
-
-<section class="catalog-header">
-
+<section class="mn-catalog-page mn-categories-catalog">
     <div class="container">
-
-        <div class="catalog-header-inner">
-
+        <header class="mn-editorial-header">
             <div>
-
-                <span class="section-eyebrow">
-                    Explore the collection
-                </span>
-
-                <h1 class="catalog-title">
-                    Categories
-                </h1>
-
-                <p class="catalog-intro">
-
-                    Browse the library by subject and discover
-                    books collected around the topics that
-                    interest you.
-
-                </p>
-
+                <span class="mn-editorial-kicker">اختر رفّك</span>
+                <h1>أقسام المكتبة</h1>
+                <p>بدل القوائم التقليدية، كل قسم هنا يعمل كرف مستقل: فكرة واضحة، وصف قصير، وعدد الكتب التي ستجدها داخله.</p>
             </div>
+            <div class="mn-editorial-side">
+                <span class="mn-count-stamp"><b>${categoryCount ?: 0}</b> قسم</span>
+                <sec:ifAnyGranted roles="ROLE_ADMIN"><g:link action="create" class="mn-solid-action"><i class="bi bi-plus-lg"></i> إضافة قسم</g:link></sec:ifAnyGranted>
+            </div>
+        </header>
 
-
-            <sec:ifAnyGranted roles="ROLE_ADMIN">
-
-                <div class="catalog-header-action">
-
-                    <g:link controller="category"
-                            action="create"
-                            class="btn btn-library-primary">
-
-                        Add Category
-
-                    </g:link>
-
-                </div>
-
-            </sec:ifAnyGranted>
-
-        </div>
-
+        <g:if test="${categoryList}">
+            <div class="mn-category-ledger">
+                <g:each in="${categoryList}" var="category" status="i">
+                    <article class="mn-category-ledger-row">
+                        <div class="mn-category-number">${String.format('%02d', i + 1 + (params.int('offset') ?: 0))}</div>
+                        <div class="mn-category-spine"><span></span><span></span><span></span></div>
+                        <div class="mn-category-copy">
+                            <span class="mn-note-label">${categoryBookCounts?.get(category.id) ?: 0} كتاب</span>
+                            <h2><g:link action="show" id="${category.id}">${category.name}</g:link></h2>
+                            <p>${category.description ?: 'لم يُضف وصف لهذا القسم بعد.'}</p>
+                        </div>
+                        <div class="mn-category-row-actions">
+                            <g:if test="${isAdmin && !category.active}"><span class="mn-mini-badge">غير مفعّل</span></g:if>
+                            <g:link action="show" id="${category.id}" class="mn-round-arrow" aria-label="فتح القسم"><i class="bi bi-arrow-left"></i></g:link>
+                            <sec:ifAnyGranted roles="ROLE_ADMIN"><g:link action="edit" id="${category.id}" class="mn-icon-action" title="تعديل"><i class="bi bi-pencil"></i></g:link></sec:ifAnyGranted>
+                        </div>
+                    </article>
+                </g:each>
+            </div>
+            <div class="mn-pagination-wrap"><g:paginate total="${categoryCount ?: 0}" max="${params.int('max') ?: 12}"/></div>
+        </g:if>
+        <g:else><div class="mn-catalog-empty"><i class="bi bi-grid"></i><h2>لا توجد أقسام متاحة الآن</h2><p>ستظهر الأقسام هنا بمجرد إضافتها وتفعيلها.</p></div></g:else>
     </div>
-
 </section>
-
-
-
-<section class="catalog-section">
-
-    <div class="container">
-
-
-        <!-- =================================================
-             ADMIN VIEW
-        ================================================== -->
-
-        <g:if test="${isAdmin}">
-
-            <div class="admin-section-heading">
-
-                <div>
-
-                    <span class="section-eyebrow">
-                        Catalog management
-                    </span>
-
-                    <h2>
-                        Manage Categories
-                    </h2>
-
-                </div>
-
-                <span class="admin-result-count">
-                    ${categoryCount ?: 0} categories
-                </span>
-
-            </div>
-
-
-            <g:if test="${categoryList}">
-
-                <div class="admin-table-wrap">
-
-                    <table class="table library-admin-table align-middle">
-
-                        <thead>
-
-                        <tr>
-
-                            <th>
-                                Category
-                            </th>
-
-                            <th>
-                                Description
-                            </th>
-
-                            <th>
-                                Status
-                            </th>
-
-                            <th class="text-end">
-                                Actions
-                            </th>
-
-                        </tr>
-
-                        </thead>
-
-
-                        <tbody>
-
-                        <g:each in="${categoryList}"
-                                var="category">
-
-                            <tr>
-
-                                <td>
-
-                                    <g:link controller="category"
-                                            action="show"
-                                            id="${category.id}"
-                                            class="admin-primary-link">
-
-                                        ${category.name}
-
-                                    </g:link>
-
-                                </td>
-
-
-                                <td class="admin-table-description">
-
-                                    <g:if test="${category.description}">
-
-                                        ${category.description}
-
-                                    </g:if>
-
-                                    <g:else>
-
-                                        <span class="text-muted">
-                                            No description
-                                        </span>
-
-                                    </g:else>
-
-                                </td>
-
-
-                                <td>
-
-                                    <g:if test="${category.active}">
-
-                                        <span class="status-badge status-active">
-                                            Active
-                                        </span>
-
-                                    </g:if>
-
-                                    <g:else>
-
-                                        <span class="status-badge status-inactive">
-                                            Inactive
-                                        </span>
-
-                                    </g:else>
-
-                                </td>
-
-
-                                <td class="text-end">
-
-                                    <div class="admin-table-actions">
-
-                                        <g:link controller="category"
-                                                action="show"
-                                                id="${category.id}"
-                                                class="btn btn-sm btn-outline-secondary">
-
-                                            View
-
-                                        </g:link>
-
-
-                                        <g:link controller="category"
-                                                action="edit"
-                                                id="${category.id}"
-                                                class="btn btn-sm btn-outline-primary">
-
-                                            Edit
-
-                                        </g:link>
-
-                                    </div>
-
-                                </td>
-
-                            </tr>
-
-                        </g:each>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </g:if>
-
-
-            <g:else>
-
-                <div class="empty-state">
-
-                    <h3>
-                        No categories yet
-                    </h3>
-
-                    <p>
-                        Create the first category to begin organizing
-                        the library catalog.
-                    </p>
-
-                </div>
-
-            </g:else>
-
-        </g:if>
-
-
-
-        <!-- =================================================
-             PUBLIC / USER VIEW
-        ================================================== -->
-
-        <g:if test="${!isAdmin}">
-
-            <g:if test="${categoryList}">
-
-                <div class="category-directory">
-
-                    <g:each in="${categoryList}"
-                            var="category"
-                            status="i">
-
-                        <article class="category-directory-item">
-
-                            <div class="category-number">
-
-                                ${(params.int('offset') ?: 0) + i + 1}
-
-                            </div>
-
-
-                            <div class="category-directory-content">
-
-                                <h2>
-
-                                    <g:link controller="category"
-                                            action="show"
-                                            id="${category.id}">
-
-                                        ${category.name}
-
-                                    </g:link>
-
-                                </h2>
-
-
-                                <g:if test="${category.description}">
-
-                                    <p>
-                                        ${category.description}
-                                    </p>
-
-                                </g:if>
-
-                                <g:else>
-
-                                    <p class="text-muted">
-                                        Explore books available in this category.
-                                    </p>
-
-                                </g:else>
-
-                            </div>
-
-
-                            <div class="category-directory-action">
-
-                                <g:link controller="category"
-                                        action="show"
-                                        id="${category.id}"
-                                        class="text-link">
-
-                                    Explore books
-                                    <span aria-hidden="true">
-                                        →
-                                    </span>
-
-                                </g:link>
-
-                            </div>
-
-                        </article>
-
-                    </g:each>
-
-                </div>
-
-            </g:if>
-
-
-            <g:else>
-
-                <div class="empty-state">
-
-                    <h2>
-                        No categories available
-                    </h2>
-
-                    <p>
-                        There are no active library categories
-                        to browse right now.
-                    </p>
-
-                </div>
-
-            </g:else>
-
-        </g:if>
-
-
-
-        <!-- =================================================
-             PAGINATION
-        ================================================== -->
-
-        <g:if test="${categoryCount > (params.int('max') ?: 12)}">
-
-            <div class="library-pagination">
-
-                <g:paginate
-                    controller="category"
-                    action="index"
-                    total="${categoryCount ?: 0}"
-                    max="${params.int('max') ?: 12}"/>
-
-            </div>
-
-        </g:if>
-
-    </div>
-
-</section>
-
-
 </body>
-
 </html>

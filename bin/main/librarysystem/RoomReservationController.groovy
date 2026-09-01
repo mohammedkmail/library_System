@@ -8,23 +8,20 @@ class RoomReservationController {
 
     SpringSecurityService springSecurityService
     RoomReservationService roomReservationService
+    HolidayCalendarService holidayCalendarService
 
     def index() {
+        roomReservationService.updateCompletedReservations()
 
-        User currentUser =
-            springSecurityService.currentUser as User
-
+        User currentUser = springSecurityService.currentUser as User
         List<RoomReservation> reservations
 
         if (isAdmin(currentUser)) {
-
             reservations = RoomReservation.list(
                 sort: 'startTime',
                 order: 'desc'
             )
-
         } else {
-
             reservations = RoomReservation.findAllByUser(
                 currentUser,
                 [
@@ -39,21 +36,18 @@ class RoomReservationController {
 
     def show(Long id) {
 
-        RoomReservation reservation =
-            roomReservationService.get(id)
+        RoomReservation reservation = roomReservationService.get(id)
 
         if (!reservation) {
             notFound()
             return
         }
 
-        User currentUser =
-            springSecurityService.currentUser as User
+        User currentUser = springSecurityService.currentUser as User
 
-        if (
-            !isAdmin(currentUser) &&
-            reservation.user.id != currentUser.id
-        ) {
+        if (!isAdmin(currentUser) &&
+            reservation.user.id != currentUser.id) {
+
             render status: 403
             return
         }
@@ -63,8 +57,7 @@ class RoomReservationController {
 
     def create() {
 
-        User currentUser =
-            springSecurityService.currentUser as User
+        User currentUser = springSecurityService.currentUser as User
 
         if (isAdmin(currentUser)) {
             render status: 403
@@ -82,14 +75,14 @@ class RoomReservationController {
 
         respond new RoomReservation(),
             model: [
-                activeRooms: activeRooms
+                activeRooms      : activeRooms,
+                upcomingHolidays : holidayCalendarService.upcomingHolidays(6)
             ]
     }
 
     def save() {
 
-        User currentUser =
-            springSecurityService.currentUser as User
+        User currentUser = springSecurityService.currentUser as User
 
         if (isAdmin(currentUser)) {
             render status: 403
@@ -97,9 +90,7 @@ class RoomReservationController {
         }
 
         StudyRoom studyRoom =
-            StudyRoom.get(
-                params.long('studyRoom.id')
-            )
+            StudyRoom.get(params.long('studyRoom.id'))
 
         Date startTime =
             params.date(
@@ -124,15 +115,18 @@ class RoomReservationController {
                 )
 
             flash.message =
-                'Room reserved successfully.'
+                'تم تثبيت الموعد مؤقتًا لمدة 15 دقيقة. أكمل الدفع لتأكيد الحجز.'
 
-            redirect action: 'show',
-                     id: reservation.id
+            redirect(
+                controller: 'payment',
+                action: 'checkout',
+                params: [
+                    purpose : 'ROOM_RESERVATION',
+                    targetId: reservation.id
+                ]
+            )
 
-        } catch (
-            IllegalArgumentException |
-            IllegalStateException e
-        ) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
 
             flash.message = e.message
 
@@ -145,16 +139,20 @@ class RoomReservationController {
                     ]
                 )
 
-            respond new RoomReservation(
-                user: currentUser,
-                studyRoom: studyRoom,
-                startTime: startTime,
-                endTime: endTime
-            ),
-            view: 'create',
-            model: [
-                activeRooms: activeRooms
-            ]
+            respond(
+                new RoomReservation(
+                    user      : currentUser,
+                    studyRoom : studyRoom,
+                    startTime : startTime,
+                    endTime   : endTime
+                ),
+                view: 'create',
+                model: [
+                    activeRooms      : activeRooms,
+                    upcomingHolidays :
+                        holidayCalendarService.upcomingHolidays(6)
+                ]
+            )
         }
     }
 
@@ -171,10 +169,9 @@ class RoomReservationController {
         User currentUser =
             springSecurityService.currentUser as User
 
-        if (
-            !isAdmin(currentUser) &&
-            reservation.user.id != currentUser.id
-        ) {
+        if (!isAdmin(currentUser) &&
+            reservation.user.id != currentUser.id) {
+
             render status: 403
             return
         }
@@ -184,7 +181,7 @@ class RoomReservationController {
             roomReservationService.cancelReservation(id)
 
             flash.message =
-                'Room reservation cancelled successfully.'
+                'تم إلغاء حجز الغرفة.'
 
             redirect action: 'index'
 
@@ -192,19 +189,18 @@ class RoomReservationController {
 
             flash.message = e.message
 
-            redirect action: 'show',
-                     id: id
+            redirect(
+                action: 'show',
+                id: id
+            )
         }
     }
 
     private boolean isAdmin(User user) {
-
-        user.authorities*.authority
-            .contains('ROLE_ADMIN')
+        user?.authorities*.authority.contains('ROLE_ADMIN')
     }
 
     protected void notFound() {
-
         render status: 404
     }
 }
