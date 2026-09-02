@@ -2,6 +2,9 @@ package librarysystem
 
 import grails.plugin.springsecurity.annotation.Secured
 import grails.validation.ValidationException
+import org.springframework.web.multipart.MultipartFile
+
+import static org.springframework.http.HttpStatus.NOT_FOUND
 
 @Secured(['ROLE_ADMIN'])
 class StudyRoomController {
@@ -9,160 +12,320 @@ class StudyRoomController {
     StudyRoomService studyRoomService
 
     static allowedMethods = [
-        save  : 'POST',
-        update: 'PUT',
-        delete: 'DELETE'
+            save  : 'POST',
+            update: 'PUT',
+            delete: 'DELETE'
     ]
 
     def index(Integer max) {
-
-        params.max =
-            Math.min(max ?: 10, 100)
+        params.max = Math.min(max ?: 20, 100)
 
         respond studyRoomService.list(params),
-            model: [
-                studyRoomCount: studyRoomService.count()
-            ]
+                model: [studyRoomCount: studyRoomService.count()]
     }
 
     def show(Long id) {
+        StudyRoom room = studyRoomService.get(id)
 
-        StudyRoom studyRoom =
-            studyRoomService.get(id)
-
-        if (!studyRoom) {
+        if (!room) {
             notFound()
             return
         }
 
-        respond studyRoom
+        respond room
     }
 
     def create() {
-
-        respond new StudyRoom(params)
+        respond new StudyRoom()
     }
 
-    def save(StudyRoom studyRoom) {
+    def save() {
 
-        if (!studyRoom) {
-            notFound()
+        StudyRoom room = new StudyRoom()
+
+        if (!applyFormData(room)) {
+            render view: 'create',
+                    model: [studyRoom: room]
             return
         }
 
         try {
 
-            studyRoomService.save(studyRoom)
+            applyImage(room)
 
-        } catch (ValidationException e) {
+            studyRoomService.save(room)
+
+        } catch (ValidationException | IllegalArgumentException e) {
 
             flash.message =
-                'Study room could not be created. Please fix the errors below.'
+                    e.message ?: 'تعذر إضافة الغرفة. راجع البيانات.'
 
-            respond studyRoom.errors,
-                view: 'create'
+            render view: 'create',
+                    model: [studyRoom: room]
 
             return
         }
 
-        flash.message =
-            'Study room created successfully.'
+        flash.message = 'تمت إضافة غرفة الدراسة.'
 
         redirect action: 'show',
-                 id: studyRoom.id
+                id: room.id
     }
 
     def edit(Long id) {
 
-        StudyRoom studyRoom =
-            studyRoomService.get(id)
+        StudyRoom room = studyRoomService.get(id)
 
-        if (!studyRoom) {
+        if (!room) {
             notFound()
             return
         }
 
-        respond studyRoom
+        respond room
     }
 
-    def update(StudyRoom studyRoom) {
+    def update(Long id) {
 
-        if (!studyRoom) {
+        StudyRoom room = studyRoomService.get(id)
+
+        if (!room) {
             notFound()
+            return
+        }
+
+        if (!applyFormData(room)) {
+            render view: 'edit',
+                    model: [studyRoom: room]
             return
         }
 
         try {
 
-            studyRoomService.save(studyRoom)
+            applyImage(room)
 
-        } catch (ValidationException e) {
+            if (params.boolean('removeImage')) {
+                room.imageData = null
+                room.imageContentType = null
+            }
+
+            studyRoomService.save(room)
+
+        } catch (ValidationException | IllegalArgumentException e) {
 
             flash.message =
-                'Study room could not be updated. Please fix the errors below.'
+                    e.message ?: 'تعذر تحديث الغرفة.'
 
-            respond studyRoom.errors,
-                view: 'edit'
+            render view: 'edit',
+                    model: [studyRoom: room]
 
             return
         }
 
-        flash.message =
-            'Study room updated successfully.'
+        flash.message = 'تم تحديث الغرفة.'
 
         redirect action: 'show',
-                 id: studyRoom.id
+                id: room.id
     }
 
     def delete(Long id) {
 
-        if (!id) {
+        StudyRoom room = studyRoomService.get(id)
+
+        if (!room) {
             notFound()
             return
         }
 
-        StudyRoom studyRoom =
-            studyRoomService.get(id)
+        if (RoomReservation.countByStudyRoom(room) > 0) {
 
-        if (!studyRoom) {
-            notFound()
-            return
-        }
-
-        Long reservationCount =
-            RoomReservation.countByStudyRoom(
-                studyRoom
-            )
-
-        if (reservationCount > 0) {
-
-            studyRoom.active = false
-
-            studyRoomService.save(
-                studyRoom
-            )
+            room.active = false
+            studyRoomService.save(room)
 
             flash.message =
-                'This study room has reservation history, so it was deactivated instead of deleted.'
+                    'للغرفة سجل حجوزات سابق، لذلك تم تعطيلها بدل حذفها.'
 
             redirect action: 'show',
-                     id: studyRoom.id
+                    id: id
 
             return
         }
 
         studyRoomService.delete(id)
 
-        flash.message =
-            'Study room deleted successfully.'
+        flash.message = 'تم حذف الغرفة.'
 
         redirect action: 'index'
+    }
+
+    @Secured(['ROLE_USER', 'ROLE_ADMIN'])
+    def photo(Long id) {
+
+        StudyRoom room = studyRoomService.get(id)
+
+        if (!room?.imageData) {
+            render status: NOT_FOUND
+            return
+        }
+
+        response.contentType =
+                room.imageContentType ?: 'image/jpeg'
+
+        response.contentLength =
+                room.imageData.length
+
+        response.outputStream.write(
+                room.imageData
+        )
+
+        response.outputStream.flush()
+    }
+
+    private boolean applyFormData(StudyRoom room) {
+
+        /*
+         * مهم:
+         * لا نستخدم bindData هنا نهائياً.
+         */
+        room.clearErrors()
+
+        room.roomNumber =
+                params.roomNumber
+                        ?.toString()
+                        ?.trim()
+
+        room.name =
+                params.name
+                        ?.toString()
+                        ?.trim()
+
+        room.location =
+                params.location
+                        ?.toString()
+                        ?.trim()
+
+        room.description =
+                params.description
+                        ?.toString()
+                        ?.trim()
+
+        room.features =
+                params.features
+                        ?.toString()
+                        ?.trim()
+
+        room.active =
+                params.active?.toString() == 'true'
+
+
+        /*
+         * Capacity
+         */
+        try {
+
+            String rawCapacity =
+                    params.capacity
+                            ?.toString()
+                            ?.trim()
+
+            room.capacity =
+                    rawCapacity
+                            ? Integer.parseInt(rawCapacity)
+                            : null
+
+        } catch (NumberFormatException ignored) {
+
+            room.errors.rejectValue(
+                    'capacity',
+                    'typeMismatch',
+                    'السعة يجب أن تكون رقماً صحيحاً.'
+            )
+
+            return false
+        }
+
+
+        /*
+         * Price
+         *
+         * نقبل:
+         * 5
+         * 5.00
+         * 5,00
+         * 5٫00
+         */
+        try {
+
+            String rawPrice =
+                    params.pricePerHour
+                            ?.toString()
+                            ?.trim()
+
+            if (!rawPrice) {
+
+                room.errors.rejectValue(
+                        'pricePerHour',
+                        'nullable',
+                        'السعر لكل ساعة مطلوب.'
+                )
+
+                return false
+            }
+
+            rawPrice = rawPrice
+                    .replace('٬', '')
+                    .replace('٫', '.')
+                    .replace(',', '.')
+
+            room.pricePerHour =
+                    new BigDecimal(rawPrice)
+
+        } catch (NumberFormatException ignored) {
+
+            room.errors.rejectValue(
+                    'pricePerHour',
+                    'typeMismatch',
+                    'السعر لكل ساعة غير صالح.'
+            )
+
+            return false
+        }
+
+
+        /*
+         * الآن السعر صار BigDecimal فعلياً.
+         * نعمل Validation بعد التحويل.
+         */
+        return room.validate()
+    }
+
+    private void applyImage(StudyRoom room) {
+
+        MultipartFile file =
+                request.getFile('imageFile')
+
+        if (file && !file.empty) {
+
+            if (!file.contentType?.startsWith('image/')) {
+                throw new IllegalArgumentException(
+                        'الملف يجب أن يكون صورة.'
+                )
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                throw new IllegalArgumentException(
+                        'حجم الصورة يجب ألا يتجاوز 5MB.'
+                )
+            }
+
+            room.imageData = file.bytes
+            room.imageContentType = file.contentType
+        }
     }
 
     protected void notFound() {
 
         flash.message =
-            'Study room not found.'
+                'غرفة الدراسة غير موجودة.'
 
         redirect action: 'index'
     }

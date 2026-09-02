@@ -121,7 +121,7 @@ class BookCopyController {
         } catch (ValidationException e) {
 
             flash.message =
-                'Book copy could not be created. Please fix the errors below.'
+                'تعذر إضافة نسخة الكتاب. راجع الحقول المطلوبة.'
 
             render view: 'create',
                 model: [
@@ -136,7 +136,7 @@ class BookCopyController {
         }
 
         flash.message =
-            'Book copy created successfully.'
+            'تمت إضافة نسخة الكتاب بنجاح.'
 
         redirect action: 'show',
                  id: bookCopy.id
@@ -182,10 +182,10 @@ class BookCopyController {
                 [
                     message(
                         code: 'bookCopy.label',
-                        default: 'Book Copy'
+                        default: 'نسخة الكتاب'
                     )
                 ] as Object[],
-                'Another user has updated this book copy.'
+                'تم تعديل نسخة الكتاب من جلسة أخرى. حدّث الصفحة وأعد المحاولة.'
             )
 
             render view: 'edit',
@@ -253,7 +253,7 @@ class BookCopyController {
             ) {
 
                 flash.message =
-                    'BORROWED and RESERVED statuses are controlled by the borrowing and reservation workflow.'
+                    'حالتا «مُعار» و«محجوز» يديرهما نظام الإعارة والحجز تلقائيًا.'
 
                 render view: 'edit',
                     model: editModel(bookCopy)
@@ -275,7 +275,7 @@ class BookCopyController {
             ) {
 
                 flash.message =
-                    'Invalid book copy status.'
+                    'حالة نسخة الكتاب غير صالحة.'
 
                 render view: 'edit',
                     model: editModel(bookCopy)
@@ -295,7 +295,7 @@ class BookCopyController {
         } catch (ValidationException e) {
 
             flash.message =
-                'Book copy could not be updated. Please fix the errors below.'
+                'تعذر تحديث نسخة الكتاب. راجع الحقول المطلوبة.'
 
             render view: 'edit',
                 model: editModel(bookCopy)
@@ -304,7 +304,7 @@ class BookCopyController {
         }
 
         flash.message =
-            'Book copy updated successfully.'
+            'تم تحديث نسخة الكتاب بنجاح.'
 
         redirect action: 'show',
                  id: bookCopy.id
@@ -330,7 +330,7 @@ class BookCopyController {
         ) {
 
             flash.message =
-                'This physical copy cannot be deleted because it is used by the circulation history.'
+                'لا يمكن حذف هذه النسخة لأنها مرتبطة بسجل إعارة أو حجز سابق.'
 
             redirect action: 'show',
                      id: bookCopy.id
@@ -341,7 +341,7 @@ class BookCopyController {
         bookCopyService.delete(id)
 
         flash.message =
-            'Book copy deleted successfully.'
+            'تم حذف نسخة الكتاب بنجاح.'
 
         redirect action: 'index'
     }
@@ -423,7 +423,7 @@ class BookCopyController {
     protected void notFound() {
 
         flash.message =
-            'Book copy not found.'
+            'نسخة الكتاب غير موجودة.'
 
         redirect action: 'index'
     }

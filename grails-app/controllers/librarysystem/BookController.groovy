@@ -3,6 +3,7 @@ package librarysystem
 import grails.plugin.springsecurity.SpringSecurityService
 import grails.plugin.springsecurity.annotation.Secured
 import grails.validation.ValidationException
+import grails.converters.JSON
 import org.springframework.web.multipart.MultipartFile
 
 import static org.springframework.http.HttpStatus.*
@@ -12,6 +13,7 @@ class BookController {
     BookService bookService
     DigitalAccessService digitalAccessService
     MembershipService membershipService
+    BookMetadataService bookMetadataService
     SpringSecurityService springSecurityService
 
     static allowedMethods = [
@@ -191,7 +193,8 @@ class BookController {
 
                     reservation.status in [
                         'WAITING',
-                        'READY'
+                        'READY',
+                        'PAID'
                     ]
                 }
 
@@ -274,15 +277,17 @@ class BookController {
 
 
     @Secured(['ROLE_ADMIN'])
-    def save(Book book) {
+    def save() {
 
-        if (!book) {
-            notFound()
-            return
-        }
+        Book book =
+            new Book()
 
 
         try {
+
+            bindBookForm(
+                book
+            )
 
             MultipartFile coverFile =
                 request.getFile('coverFile')
@@ -292,21 +297,43 @@ class BookController {
                 coverFile &&
                 !coverFile.empty
             ) {
-
-                book.coverData =
-                    coverFile.bytes
-
-                book.coverContentType =
-                    coverFile.contentType
+                if (!coverFile.contentType?.startsWith('image/')) {
+                    throw new IllegalArgumentException('الغلاف يجب أن يكون ملف صورة.')
+                }
+                if (coverFile.size > 5 * 1024 * 1024) {
+                    throw new IllegalArgumentException('حجم الغلاف يجب ألا يتجاوز 5MB.')
+                }
+                book.coverData = coverFile.bytes
+                book.coverContentType = coverFile.contentType
             }
 
 
-            bookService.save(book)
+            Book.withTransaction {
 
-        } catch (ValidationException e) {
+                applyBookAuthor(
+                    book
+                )
+
+                applyBookPriceFields(
+                    book
+                )
+
+                bookService.save(
+                    book
+                )
+            }
+
+        } catch (ValidationException | IllegalArgumentException e) {
+
+            println '===== BOOK SAVE ERROR ====='
+            println "Exception: ${e.message}"
+
+            book.errors.allErrors.each { error ->
+                println error
+            }
 
             flash.message =
-                'Book could not be created. Please fix the errors below.'
+                'تعذر إضافة الكتاب. راجع الأخطاء الظاهرة أدناه.'
 
 
             render view: 'create',
@@ -331,7 +358,7 @@ class BookController {
 
 
         flash.message =
-            'Book created successfully.'
+            'تمت إضافة الكتاب بنجاح.'
 
 
         redirect action: 'show',
@@ -369,7 +396,11 @@ class BookController {
 
 
     @Secured(['ROLE_ADMIN'])
-    def update(Book book) {
+    def update(Long id) {
+
+        Book book =
+            bookService.get(id)
+
 
         if (!book) {
             notFound()
@@ -379,6 +410,10 @@ class BookController {
 
         try {
 
+            bindBookForm(
+                book
+            )
+
             MultipartFile coverFile =
                 request.getFile('coverFile')
 
@@ -387,21 +422,36 @@ class BookController {
                 coverFile &&
                 !coverFile.empty
             ) {
-
-                book.coverData =
-                    coverFile.bytes
-
-                book.coverContentType =
-                    coverFile.contentType
+                if (!coverFile.contentType?.startsWith('image/')) {
+                    throw new IllegalArgumentException('الغلاف يجب أن يكون ملف صورة.')
+                }
+                if (coverFile.size > 5 * 1024 * 1024) {
+                    throw new IllegalArgumentException('حجم الغلاف يجب ألا يتجاوز 5MB.')
+                }
+                book.coverData = coverFile.bytes
+                book.coverContentType = coverFile.contentType
             }
 
 
-            bookService.save(book)
+            Book.withTransaction {
 
-        } catch (ValidationException e) {
+                applyBookAuthor(
+                    book
+                )
+
+                applyBookPriceFields(
+                    book
+                )
+
+                bookService.save(
+                    book
+                )
+            }
+
+        } catch (ValidationException | IllegalArgumentException e) {
 
             flash.message =
-                'Book could not be updated. Please fix the errors below.'
+                'تعذر تحديث الكتاب. راجع الحقول المطلوبة.'
 
 
             render view: 'edit',
@@ -426,7 +476,7 @@ class BookController {
 
 
         flash.message =
-            'Book updated successfully.'
+            'تم تحديث الكتاب بنجاح.'
 
 
         redirect action: 'show',
@@ -463,12 +513,12 @@ class BookController {
 
 
                 flash.message =
-                    'This book has system history, so it was deactivated instead of deleted.'
+                    'للكتاب سجل عمليات سابق، لذلك تم تعطيله بدل حذفه نهائيًا.'
 
-            } catch (ValidationException e) {
+            } catch (ValidationException | IllegalArgumentException e) {
 
                 flash.message =
-                    'Book could not be deactivated.'
+                    'تعذر تعطيل الكتاب.'
 
 
                 redirect action: 'show',
@@ -482,11 +532,22 @@ class BookController {
             bookService.delete(id)
 
             flash.message =
-                'Book deleted successfully.'
+                'تم حذف الكتاب بنجاح.'
         }
 
 
         redirect action: 'index'
+    }
+
+
+    @Secured(['ROLE_ADMIN'])
+    def lookupMetadata(String isbn) {
+        try {
+            render bookMetadataService.lookupByIsbn(isbn) as JSON
+        } catch (Exception e) {
+            response.status = 422
+            render([error: e.message] as JSON)
+        }
     }
 
 
@@ -497,25 +558,28 @@ class BookController {
             bookService.get(id)
 
 
-        if (
-            !book ||
-            !book.coverData
-        ) {
-
+        if (!book) {
             render status: NOT_FOUND
             return
         }
 
-
         User currentUser =
             springSecurityService.currentUser as User
-
 
         if (
             book.active != true &&
             !isAdmin(currentUser)
         ) {
+            render status: NOT_FOUND
+            return
+        }
 
+        if (!book.coverData && book.externalCoverUrl) {
+            redirect url: book.externalCoverUrl
+            return
+        }
+
+        if (!book.coverData) {
             render status: NOT_FOUND
             return
         }
@@ -533,6 +597,304 @@ class BookController {
         )
 
         response.outputStream.flush()
+    }
+
+
+
+    /**
+     * Binds the normal Book form fields.
+     *
+     * Author and money fields are handled separately.
+     */
+    private void bindBookForm(
+        Book book
+    ) {
+
+        bindData(
+            book,
+            params,
+            [
+                include: [
+                    'title',
+                    'isbn',
+                    'description',
+                    'publishYear',
+                    'publisher',
+                    'pageCount',
+                    'language',
+                    'externalCoverUrl',
+                    'physicalSaleStock',
+                    'digitalContent'
+                ]
+            ]
+        )
+
+
+        Long categoryId =
+            params.long(
+                'category.id'
+            )
+
+
+        if (categoryId) {
+
+            Category category =
+                Category.get(
+                    categoryId
+                )
+
+
+            if (!category) {
+
+                throw new IllegalArgumentException(
+                    'القسم المحدد غير موجود.'
+                )
+            }
+
+
+            book.category =
+                category
+
+        } else {
+
+            book.category =
+                null
+        }
+
+
+        book.digitalAvailable =
+            params.digitalAvailable ==
+                'true'
+
+
+        book.membershipIncluded =
+            params.membershipIncluded ==
+                'true'
+
+
+        book.active =
+            params.active ==
+                'true'
+    }
+
+
+
+    /**
+     * Resolves the author for the Book.
+     *
+     * Existing author:
+     * use the selected Author.
+     *
+     * New author:
+     * reuse it if it already exists,
+     * otherwise create it.
+     */
+    private void applyBookAuthor(
+        Book book
+    ) {
+
+        Long selectedAuthorId =
+            params.long(
+                'author.id'
+            )
+
+
+        /*
+         * دعم existingAuthorId أيضًا
+         * إذا غيرنا اسم الحقل لاحقًا.
+         */
+        if (!selectedAuthorId) {
+
+            selectedAuthorId =
+                params.long(
+                    'existingAuthorId'
+                )
+        }
+
+
+        String newAuthorName =
+            params.newAuthorName
+                ?.toString()
+                ?.trim()
+
+
+        if (newAuthorName) {
+
+            newAuthorName =
+                newAuthorName
+                    .replaceAll(
+                        /\s+/,
+                        ' '
+                    )
+        }
+
+
+        /*
+         * لا نقبل الاثنين معًا.
+         */
+        if (
+            selectedAuthorId &&
+            newAuthorName
+        ) {
+
+            throw new IllegalArgumentException(
+                'اختر مؤلفًا موجودًا أو أدخل مؤلفًا جديدًا، وليس الاثنين معًا.'
+            )
+        }
+
+
+        Author author = null
+
+
+        /*
+         * مؤلف موجود.
+         */
+        if (selectedAuthorId) {
+
+            author =
+                Author.get(
+                    selectedAuthorId
+                )
+
+
+            if (!author) {
+
+                throw new IllegalArgumentException(
+                    'المؤلف المحدد غير موجود.'
+                )
+            }
+        }
+
+
+        /*
+         * مؤلف مكتوب يدويًا أو جاي من API.
+         */
+        else if (newAuthorName) {
+
+            author =
+                Author.findByNameIlike(
+                    newAuthorName
+                )
+
+
+            /*
+             * إذا غير موجود ننشئه.
+             */
+            if (!author) {
+
+                author =
+                    new Author(
+                        name:
+                            newAuthorName
+                    )
+
+
+                author.save(
+                    flush: true,
+                    failOnError: true
+                )
+            }
+        }
+
+
+        /*
+         * لا Dropdown ولا اسم جديد.
+         */
+        if (!author) {
+
+            throw new IllegalArgumentException(
+                'اختر مؤلفًا موجودًا أو أدخل اسم مؤلف جديد.'
+            )
+        }
+
+
+        /*
+         * أهم سطر:
+         * ربط المؤلف بالكتاب.
+         */
+        book.author =
+            author
+    }
+
+
+
+    /**
+     * Handles Book money fields manually.
+     *
+     * We intentionally do not let Grails automatically
+     * bind these values to BigDecimal because decimal
+     * parsing depends on locale.
+     */
+    private void applyBookPriceFields(Book book) {
+
+        book.physicalSalePrice =
+            parseBookDecimal(
+                'physicalSalePriceInput',
+                null
+            )
+
+        book.borrowingFee =
+            parseBookDecimal(
+                'borrowingFeeInput',
+                3.00G
+            )
+
+        book.digitalPurchasePrice =
+            parseBookDecimal(
+                'digitalPurchasePriceInput',
+                null
+            )
+
+        book.digitalRentalPrice =
+            parseBookDecimal(
+                'digitalRentalPriceInput',
+                null
+            )
+    }
+
+
+    /**
+     * Accepts:
+     *
+     * 3
+     * 3.5
+     * 3.50
+     * 3,50
+     * 3٫50
+     *
+     * and Arabic digits too.
+     */
+    private BigDecimal parseBookDecimal(
+        String parameterName,
+        BigDecimal defaultValue = null
+    ) {
+
+        String raw =
+            params[parameterName]
+                ?.toString()
+                ?.trim()
+
+        if (!raw) {
+            return defaultValue
+        }
+
+        raw = raw
+            .tr('٠١٢٣٤٥٦٧٨٩', '0123456789')
+            .tr('۰۱۲۳۴۵۶۷۸۹', '0123456789')
+            .replace('٬', '')
+            .replace('٫', '.')
+            .replace(',', '.')
+
+        try {
+
+            return new BigDecimal(raw)
+
+        } catch (NumberFormatException ignored) {
+
+            throw new IllegalArgumentException(
+                'أدخل قيمة مالية صحيحة، مثل 3 أو 3.50.'
+            )
+        }
     }
 
 
@@ -575,7 +937,7 @@ class BookController {
             form multipartForm {
 
                 flash.message =
-                    'Book not found.'
+                    'الكتاب غير موجود.'
 
                 redirect action: 'index'
             }

@@ -21,6 +21,9 @@ class RegisterController {
         String username =
             params.username?.trim()
 
+        String fullName =
+            params.fullName?.trim()
+
         String password =
             params.password
 
@@ -31,10 +34,11 @@ class RegisterController {
         if (!username) {
 
             flash.message =
-                'Username is required.'
+                'اسم المستخدم مطلوب.'
 
             respond new User(
-                username: username
+                username: username,
+                fullName: fullName
             ),
             view: 'create'
 
@@ -45,10 +49,11 @@ class RegisterController {
         if (!password) {
 
             flash.message =
-                'Password is required.'
+                'كلمة المرور مطلوبة.'
 
             respond new User(
-                username: username
+                username: username,
+                fullName: fullName
             ),
             view: 'create'
 
@@ -59,10 +64,11 @@ class RegisterController {
         if (password != confirmPassword) {
 
             flash.message =
-                'Passwords do not match.'
+                'كلمتا المرور غير متطابقتين.'
 
             respond new User(
-                username: username
+                username: username,
+                fullName: fullName
             ),
             view: 'create'
 
@@ -73,10 +79,11 @@ class RegisterController {
         if (User.findByUsername(username)) {
 
             flash.message =
-                'This username is already registered.'
+                'اسم المستخدم مسجل مسبقًا.'
 
             respond new User(
-                username: username
+                username: username,
+                fullName: fullName
             ),
             view: 'create'
 
@@ -88,11 +95,12 @@ class RegisterController {
 
             registerService.registerUser(
                 username,
+                fullName,
                 password
             )
 
             flash.message =
-                'Account created successfully. You can now sign in.'
+                'تم إنشاء الحساب بنجاح. يمكنك تسجيل الدخول الآن.'
 
             redirect controller: 'login',
                      action: 'auth'
@@ -105,7 +113,8 @@ class RegisterController {
             flash.message = e.message
 
             respond new User(
-                username: username
+                username: username,
+                fullName: fullName
             ),
             view: 'create'
         }

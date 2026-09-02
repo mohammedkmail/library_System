@@ -10,3 +10,18 @@ out/
 .project
 .settings
 .classpath
+
+# Local integration secrets
+config/integrations.local.sh
+.env
+.env.*
+!.env.example
+
+# Generated/stale IDE output
+bin/
+
+# Local backup files
+*.bak
+*.bak-*
+*.timestamp.bak
+*.before-*

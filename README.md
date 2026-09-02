@@ -1,138 +1,210 @@
-# LibrarySystem
+# المنارة — Smart Hybrid Library Management System
 
-## Project Title
+نظام مكتبة هجين مبني بـ **Grails 7 / Groovy / Java 17** ويجمع إدارة الكتب الورقية والرقمية، الاستعارات والحجوزات، المبيعات، العضويات، غرف الدراسة، الدفع التجريبي الرسمي، والتكامل مع مصادر خارجية للكتب والعطل.
 
-Smart Hybrid Library Management System
+## الفكرة الأساسية
 
-## Project Description
+المشروع لا يتعامل مع كل شيء كـ CRUD فقط؛ فيه Business Flows منفصلة حسب الواقع:
 
-LibrarySystem is a Grails-based library management application that combines physical library services with digital book access.
+- الكتاب يمكن استعارتـه أو حجز دوره أو شراؤه ورقيًا/رقميًا.
+- حجز الكتاب ينتظر النسخة مجانًا، ثم يتم الدفع عند توفر النسخة لتثبيت حق المستخدم.
+- مدة الاستعارة تبدأ عند التسليم الفعلي، وليس عند الدفع.
+- حجز غرفة الدراسة لا ينشأ أصلًا قبل نجاح الدفع.
+- الأدمن يملك كاونتر للاستعارة والبيع المباشر، بالإضافة إلى متابعة العمليات الأونلاين.
+- العطل محفوظة محليًا ويمكن مزامنتها من API خارجي مع أولوية لتعديلات الأدمن.
 
-The system allows users to browse books, borrow physical copies, reserve unavailable books, purchase physical or digital books, rent digital books, access membership-included digital content, manage memberships, and reserve study rooms.
-
-Administrators can manage books, authors, categories, book copies, study rooms, and view user activity across the system.
-
-## Target Users
-
-### Regular Users
-
-Regular users can:
-
-- Browse available books
-- View book details
-- Search books
-- Borrow available physical book copies
-- Reserve unavailable physical books
-- Purchase physical books
-- Purchase digital books
-- Rent digital books
-- Read digital books when access is available
-- Use membership-included digital books
-- Create and manage memberships
-- View their borrowings
-- View their reservations
-- View their purchases
-- View their digital access
-- Reserve study rooms
-
-### Administrators
-
-Administrators can:
-
-- Perform all regular user operations
-- Create, update, and delete books
-- Manage authors
-- Manage categories
-- Manage book copies
-- Manage study rooms
-- View all memberships
-- View all borrowings
-- View all reservations
-- View all purchases
-- View all room reservations
-
-## Main Features
-
-- Book CRUD operations
-- Book search and pagination
-- Author and category management
-- Physical book copy management
-- Book cover upload and storage using byte arrays
-- MySQL LONGBLOB image storage
-- Physical book borrowing
-- Automatic borrowing due dates
-- Late fee calculation
-- Book reservation queue
-- Membership management
-- Physical book purchasing
-- Digital book purchasing
-- Digital book renting
-- Digital book access control
-- Membership-based digital access
-- Study room reservation
-- Room reservation conflict prevention
-- Automatic room price calculation
-- Dashboard statistics
-- Role-based access control
-- REST API for book CRUD operations
-- API filtering and pagination
-- Bootstrap-based responsive interface
-
-## Technology Stack
+## أهم التقنيات
 
 - Java 17
 - Groovy
 - Grails 7
 - GORM / Hibernate
-- Spring Security Core
-- MySQL
-- H2
-- Bootstrap
+- Spring Security Core 7
+- MySQL / H2
 - GSP
+- Bootstrap 5
+- Braintree Java SDK 3.53.0
+- Braintree JavaScript v3 Hosted Fields
+- Google Books API
+- Open Library API
+- Holiday API
 - REST API
-- Postman
 - Gradle
-- Apache Tomcat 10.1
 
-## Database
+## الدفع — Braintree Sandbox
+
+الدفع الأونلاين يستخدم **Braintree Sandbox** مع Hosted Fields.
+
+بيانات البطاقة الحساسة لا يتم إرسالها إلى Grails؛ الواجهة تستلم nonce آمن من Braintree وترسله إلى الخادم لإتمام المعاملة.
+
+المفاتيح المطلوبة:
+
+```text
+BRAINTREE_MERCHANT_ID
+BRAINTREE_PUBLIC_KEY
+BRAINTREE_PRIVATE_KEY
+```
+
+راجع:
+
+```text
+INTEGRATIONS_SETUP_AR.md
+```
+
+## تقويم العطل
+
+- المكتبة تعمل طوال الأسبوع.
+- يتم منع حجز غرف الدراسة فقط في أيام الإغلاق المسجلة.
+- التقويم المحلي يعمل حتى لو فشل المصدر الخارجي.
+- يمكن للأدمن إضافة/تعديل/فتح/إغلاق يوم يدويًا.
+- يمكن مزامنة عطل فلسطين باستخدام:
+
+```text
+HOLIDAY_API_KEY
+```
+
+## حجز غرف الدراسة
+
+التسلسل:
+
+```text
+اختيار الغرفة والوقت
+        ↓
+فحص التوفر + العطل
+        ↓
+حساب السعر + الخصم
+        ↓
+Braintree Sandbox
+        ↓
+إعادة فحص التوفر والسعر
+        ↓
+إنشاء CONFIRMED Reservation فقط بعد نجاح الدفع
+```
+
+لا يوجد `RoomReservation PENDING`.
+
+## الخصومات
+
+خصومات حجز الغرف مخزنة في `DiscountRule` ويمكن تعديلها من لوحة الأدمن دون تعديل الكود.
+
+القواعد التجريبية الافتراضية:
+
+- أقل من 24 ساعة: 0%
+- من 24 إلى 71 ساعة: 5%
+- من 72 إلى 167 ساعة: 10%
+- من 168 إلى 335 ساعة: 15%
+- 336 ساعة فأكثر: 20%
+
+## حجز واستعارة الكتب
+
+الحالات الأساسية:
+
+```text
+WAITING → READY → PAID → FULFILLED
+```
+
+- `WAITING`: المستخدم في قائمة الانتظار ولا يوجد دفع.
+- `READY`: تم تخصيص نسخة مؤقتًا وأصبح الدفع متاحًا.
+- `PAID`: النسخة مثبتة باسم المستخدم، لكن الاستعارة لم تبدأ بعد.
+- `FULFILLED`: تم التسليم وبدأت مدة الاستعارة.
+
+يدعم النظام:
+
+- الاستلام من المكتبة.
+- التوصيل.
+- دفع أونلاين.
+- دفع وتسليم مباشر من كاونتر الأدمن.
+
+## شراء الكتب
+
+يدعم:
+
+- شراء نسخة ورقية.
+- شراء نسخة رقمية.
+- استلام من المكتبة.
+- توصيل.
+- بيع مباشر من الكاونتر.
+
+المخزون لا ينقص قبل نجاح الدفع، والنسخة الرقمية لا تتفعل قبل نجاح العملية.
+
+## Google Books وOpen Library
+
+في صفحة إضافة/تعديل الكتاب يمكن استخدام ISBN لجلب بيانات مقترحة من مصدر خارجي.
+
+الترتيب:
+
+```text
+Google Books → Open Library fallback
+```
+
+وتبقى جميع الحقول قابلة للتعديل من الأدمن قبل الحفظ.
+
+## الصور
+
+يدعم النظام:
+
+- غلاف الكتاب محليًا أو من مصدر خارجي.
+- صورة المؤلف.
+- صورة غرفة الدراسة.
+
+الحد الأقصى للرفع: **5MB**.
+
+## العلاقات في الواجهة
+
+الواجهة لا تعرض تمثيلات مثل:
+
+```text
+librarysystem.Author : 4
+User : 7
+```
+
+بل تعرض الاسم الفعلي، عنوان الكتاب، اسم الغرفة، كود النسخة وغيرها من القيم المفهومة للمستخدم.
+
+## الحسابات التجريبية
+
+يتم إنشاء حسابين عند أول تشغيل إذا لم يكونا موجودين:
+
+### Admin
+
+```text
+mohammad@library.com
+123456
+```
+
+### User
+
+```text
+ahmad@library.com
+123456
+```
+
+> هذه بيانات Demo فقط ويجب تغييرها في أي بيئة حقيقية.
+
+## قاعدة البيانات
 
 ### Development
 
-The development environment uses MySQL.
-
-Database:
-
 ```text
-library_system
+MySQL
+Database: ubs_training
+Username: libraryuser
 ```
 
-### Test
-
-The test environment uses an in-memory H2 database.
-
-```text
-jdbc:h2:mem:testDb
-```
-
-The test database is automatically created and removed during test execution.
-
-### Production
-
-The production environment uses MySQL.
-
-Production schema:
-
-```text
-ubs_training
-```
-
-Production database configuration is located in:
+الإعداد موجود في:
 
 ```text
 grails-app/conf/application.yml
 ```
 
-The production datasource supports the following environment variables:
+### Test
+
+```text
+H2 in-memory
+```
+
+### Production
+
+يدعم:
 
 ```text
 DB_USERNAME
@@ -140,247 +212,72 @@ DB_PASSWORD
 DB_URL
 ```
 
-Default production database URL:
+## تشغيل المشروع
 
-```text
-jdbc:mysql://localhost:3306/ubs_training?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+بعد تجهيز MySQL والتكاملات:
+
+```bash
+source config/integrations.local.sh
+grails compile
+grails run-app
 ```
 
-## Running Tests
+أو استخدم فحص المشروع:
 
-Run the automated test suite with:
+```bash
+./scripts/verify-project.sh
+```
+
+## الاختبارات
 
 ```bash
 ./gradlew test
 ```
 
-A successful test run should finish with:
+## REST API للكتب
 
 ```text
-BUILD SUCCESSFUL
-```
-
-## REST API
-
-The application provides REST endpoints for accessing book data.
-
-### Get Books
-
-```http
-GET /api/books
-```
-
-Supports filtering and pagination.
-
-### Get Book
-
-```http
-GET /api/books/{id}
-```
-
-### Create Book
-
-```http
-POST /api/books
-```
-
-### Update Book
-
-```http
-PUT /api/books/{id}
-```
-
-### Delete Book
-
-```http
+GET    /api/books
+GET    /api/books/{id}
+POST   /api/books
+PUT    /api/books/{id}
 DELETE /api/books/{id}
 ```
 
-The REST API is protected by Spring Security where authentication is required.
+الـ API محمي عبر Spring Security حسب الصلاحيات.
 
----
-
-# Deployment
-
-## Prerequisites
-
-Before deploying the application, make sure the following software is installed:
-
-- Java 17
-- Grails 7
-- Gradle
-- MySQL 8
-- Apache Tomcat 10.1
-- Git
-
-> Grails 7 uses Jakarta Servlet APIs and therefore requires a compatible servlet container. Tomcat 10.1 is used instead of Tomcat 9.
-
-## Production Database Configuration
-
-Create the production MySQL schema:
-
-```sql
-CREATE DATABASE IF NOT EXISTS ubs_training
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
-```
-
-Grant the application database user access to the schema:
-
-```sql
-GRANT ALL PRIVILEGES ON ubs_training.* TO 'libraryuser'@'localhost';
-FLUSH PRIVILEGES;
-```
-
-The production datasource is configured in:
+## ملفات مهمة
 
 ```text
-grails-app/conf/application.yml
+INTEGRATIONS_SETUP_AR.md  ← خطوات Braintree/Holiday API
+PROJECT_CHANGES_AR.md     ← ملخص التصميم والـ business flows
+config/integrations.example.sh
+scripts/verify-project.sh
 ```
 
-Production configuration:
+## قبل الرفع إلى GitHub
 
-```yaml
-production:
-    dataSource:
-        dbCreate: none
-        driverClassName: com.mysql.cj.jdbc.Driver
-        username: '${DB_USERNAME:libraryuser}'
-        password: '${DB_PASSWORD:}'
-        url: '${DB_URL:jdbc:mysql://localhost:3306/ubs_training?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}'
+لا ترفع أي مفاتيح حقيقية.
+
+الملفات السرية المحلية متجاهلة عبر `.gitignore`، ومن ضمنها:
+
+```text
+config/integrations.local.sh
+.env
 ```
 
-Environment variables can be supplied when deploying to another environment:
+## Deployment
 
-```bash
-export DB_USERNAME=libraryuser
-export DB_PASSWORD=your_password
-export DB_URL='jdbc:mysql://localhost:3306/ubs_training?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC'
-```
-
-Passwords should not be committed to the repository.
-
-## Build the WAR File
-
-From the project root directory run:
+إنشاء WAR:
 
 ```bash
 grails war
 ```
 
-The production WAR file is generated in:
+ثم استخدم WAR الناتج من:
 
 ```text
 build/libs/
 ```
 
-The deployable WAR is:
-
-```text
-build/libs/LibrarySystem-0.1.war
-```
-
-A successful build should display:
-
-```text
-BUILD SUCCESSFUL
-Built application to build/libs using environment: production
-```
-
-## Deploy to Tomcat
-
-Copy the generated WAR file into the Tomcat webapps directory:
-
-```bash
-cp build/libs/LibrarySystem-0.1.war /var/lib/tomcat10/webapps/LibrarySystem.war
-```
-
-Restart Tomcat:
-
-```bash
-systemctl restart tomcat10
-```
-
-Check the Tomcat service:
-
-```bash
-systemctl status tomcat10 --no-pager
-```
-
-The service should show:
-
-```text
-Active: active (running)
-```
-
-## Application URL
-
-After deployment, the application is available at:
-
-```text
-http://localhost:8080/LibrarySystem/
-```
-
-Login page:
-
-```text
-http://localhost:8080/LibrarySystem/login/auth
-```
-
-Example REST API endpoint:
-
-```text
-http://localhost:8080/LibrarySystem/api/books
-```
-
-## Context Path and Static Resources
-
-The application is deployed using the following context path:
-
-```text
-/LibrarySystem
-```
-
-Grails link tags, `createLink`, and the Asset Pipeline are used so links, CSS, JavaScript, images, and other static resources work correctly when the application is deployed under a servlet container context path.
-
-## Deployment Verification
-
-After deployment, perform a smoke test to verify that the production application works correctly.
-
-Verify the following:
-
-- Login works successfully
-- A new record can be created
-- The dashboard loads correctly
-- REST API requests return valid responses
-- Database operations use the production MySQL schema
-- Navigation links work correctly
-- Book cover resources load correctly
-- CSS and JavaScript assets load correctly
-- The application works under the `/LibrarySystem` context path
-
-## Deployment Workflow
-
-Typical production deployment workflow:
-
-```bash
-./gradlew test
-grails war
-cp build/libs/LibrarySystem-0.1.war /var/lib/tomcat10/webapps/LibrarySystem.war
-systemctl restart tomcat10
-systemctl status tomcat10 --no-pager
-```
-
-Then open:
-
-```text
-http://localhost:8080/LibrarySystem/
-```
-
-and perform the deployment smoke test.
-
----
-
-## Project Purpose
-
-This project was developed as part of the UBS Java Intern Training Program to demonstrate the use of Java, Groovy, Grails, GORM, Spring Security, REST APIs, MySQL, testing, and production WAR deployment.
+مع Tomcat 10.1 أو بيئة Servlet متوافقة مع Jakarta المستخدمة في Grails 7.

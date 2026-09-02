@@ -34,7 +34,7 @@
                     <article class="mn-library-book-card">
                         <div class="mn-book-sequence">${String.format('%02d', i + 1 + (params.int('offset') ?: 0))}</div>
                         <g:link action="show" id="${book.id}" class="mn-library-cover">
-                            <g:if test="${book.coverData}"><img src="${createLink(controller:'book', action:'cover', id:book.id)}" alt="${book.title}"/></g:if>
+                            <g:if test="${book.coverData || book.externalCoverUrl}"><img src="${createLink(controller:'book', action:'cover', id:book.id)}" alt="${book.title}"/></g:if>
                             <g:else><div class="mn-library-cover-placeholder"><i class="bi bi-book"></i><span dir="auto">${book.title}</span></div></g:else>
                             <g:if test="${book.digitalAvailable}"><span class="mn-cover-chip">رقمي</span></g:if>
                         </g:link>

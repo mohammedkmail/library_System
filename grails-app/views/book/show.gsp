@@ -12,7 +12,7 @@
         <div class="mn-book-detail-layout">
             <aside class="mn-book-detail-aside">
                 <div class="mn-detail-cover">
-                    <g:if test="${book?.coverData}"><img src="${createLink(controller:'book', action:'cover', id:book.id)}" alt="${book.title}"/></g:if>
+                    <g:if test="${book?.coverData || book?.externalCoverUrl}"><img src="${createLink(controller:'book', action:'cover', id:book.id)}" alt="${book.title}"/></g:if>
                     <g:else><div class="mn-library-cover-placeholder"><i class="bi bi-book"></i><span dir="auto">${book?.title}</span></div></g:else>
                 </div>
                 <div class="mn-detail-stock">
@@ -52,7 +52,7 @@
                     <div class="mn-price-board">
                         <g:if test="${book?.physicalSalePrice != null}"><div><span>شراء نسخة ورقية</span><b>$<g:formatNumber number="${book.physicalSalePrice}" minFractionDigits="2" maxFractionDigits="2"/></b></div></g:if>
                         <g:if test="${book?.digitalAvailable && book?.digitalPurchasePrice != null}"><div><span>شراء رقمي دائم</span><b>$<g:formatNumber number="${book.digitalPurchasePrice}" minFractionDigits="2" maxFractionDigits="2"/></b></div></g:if>
-                        <g:if test="${book?.digitalAvailable && book?.digitalRentalPrice != null}"><div><span>استئجار رقمي لمدة 7 أيام</span><b>$<g:formatNumber number="${book.digitalRentalPrice}" minFractionDigits="2" maxFractionDigits="2"/></b></div></g:if>
+                        <g:if test="${book?.digitalAvailable && book?.digitalRentalPrice != null}"><div><span>استئجار رقمي / يوم</span><b>$<g:formatNumber number="${book.digitalRentalPrice}" minFractionDigits="2" maxFractionDigits="2"/></b></div></g:if>
                     </div>
                 </g:if>
 
@@ -69,10 +69,20 @@
 
                         <div class="mn-purchase-actions">
                             <g:if test="${book?.physicalSalePrice != null && (book?.physicalSaleStock ?: 0) > 0}">
-                                <g:form controller="purchase" action="buy" method="POST" class="mn-purchase-form">
-                                    <g:hiddenField name="bookId" value="${book.id}"/><g:hiddenField name="purchaseType" value="PHYSICAL"/>
+                                <g:form controller="purchase" action="buy" method="POST" class="mn-purchase-form mn-physical-buy-form">
+                                    <g:hiddenField name="bookId" value="${book.id}"/>
+                                    <g:hiddenField name="purchaseType" value="PHYSICAL"/>
                                     <label>الكمية <input type="number" name="quantity" min="1" max="${book.physicalSaleStock}" value="1"/></label>
-                                    <button type="submit" class="mn-outline-action"><i class="bi bi-credit-card"></i> شراء ورقي</button>
+                                    <label>طريقة الاستلام
+                                        <select name="fulfillmentMethod" class="form-select mn-fulfillment-select">
+                                            <option value="PICKUP">استلام من المكتبة</option>
+                                            <option value="DELIVERY">توصيل</option>
+                                        </select>
+                                    </label>
+                                    <label class="mn-delivery-address d-none">عنوان التوصيل
+                                        <textarea name="deliveryAddress" rows="2" class="form-control" placeholder="المدينة، الحي، الشارع، وأي تفاصيل تساعد في التوصيل" dir="auto"></textarea>
+                                    </label>
+                                    <button type="submit" class="mn-outline-action"><i class="bi bi-credit-card"></i> متابعة للدفع</button>
                                 </g:form>
                             </g:if>
 
@@ -84,9 +94,13 @@
                             </g:if>
 
                             <g:if test="${book?.digitalAvailable && book?.digitalRentalPrice != null && !canReadDigital}">
-                                <g:form controller="digitalAccess" action="rent" method="POST">
-                                    <g:hiddenField name="bookId" value="${book.id}"/><g:hiddenField name="rentalDays" value="7"/>
-                                    <button type="submit" class="mn-outline-action"><i class="bi bi-clock-history"></i> استئجار 7 أيام</button>
+                                <g:form controller="digitalAccess" action="rent" method="POST" class="mn-digital-rental-form">
+                                    <g:hiddenField name="bookId" value="${book.id}"/>
+                                    <label>مدة الاستئجار
+                                        <span class="mn-inline-number-field"><input type="number" name="rentalDays" min="1" max="30" value="7" required/> يوم</span>
+                                    </label>
+                                    <small>السعر يُحسب حسب عدد الأيام ويظهر لك كاملًا قبل الدفع.</small>
+                                    <button type="submit" class="mn-outline-action"><i class="bi bi-clock-history"></i> متابعة لاستئجار رقمي</button>
                                 </g:form>
                             </g:if>
                         </div>
@@ -95,8 +109,8 @@
                             <div><span>الإعارة الورقية</span><h3>احجز نسخة للاستلام من المكتبة</h3></div>
                             <g:if test="${currentReservation}">
                                 <div class="mn-current-reservation">
-                                    <b>${currentReservation.status == 'WAITING' ? 'بانتظار تجهيز نسخة' : currentReservation.status == 'READY' ? 'جاهز للاستلام' : currentReservation.status}</b>
-                                    <g:if test="${currentReservation.readyUntil}"><small>متاح للاستلام حتى <g:formatDate date="${currentReservation.readyUntil}" format="dd/MM/yyyy HH:mm"/></small></g:if>
+                                    <b><ui:label value="${currentReservation.status}"/></b>
+                                    <g:if test="${currentReservation.readyUntil}"><small>محجوز لك حتى <g:formatDate date="${currentReservation.readyUntil}" format="dd/MM/yyyy HH:mm"/></small></g:if>
                                     <g:link controller="reservation" action="show" id="${currentReservation.id}">تفاصيل الحجز</g:link>
                                 </div>
                             </g:if>
@@ -129,5 +143,19 @@
         </div>
     </div>
 </section>
+<script>
+document.querySelectorAll('.mn-physical-buy-form').forEach(function(form){
+    const select=form.querySelector('.mn-fulfillment-select');
+    const address=form.querySelector('.mn-delivery-address');
+    const textarea=address?.querySelector('textarea');
+    const toggleDeliveryAddress=function(){
+        const delivery=select?.value==='DELIVERY';
+        address?.classList.toggle('d-none', !delivery);
+        if(textarea) textarea.required=delivery;
+    };
+    select?.addEventListener('change', toggleDeliveryAddress);
+    toggleDeliveryAddress();
+});
+</script>
 </body>
 </html>

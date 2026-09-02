@@ -102,7 +102,7 @@ class BookRestController extends RestfulController<Book> {
                 status: NOT_FOUND,
                 contentType: 'application/json',
                 text: [
-                    message: 'Book not found'
+                    message: 'الكتاب غير موجود'
                 ] as JSON
             )
 
@@ -147,7 +147,7 @@ class BookRestController extends RestfulController<Book> {
                 status: BAD_REQUEST,
                 contentType: 'application/json',
                 text: [
-                    message: 'Validation failed',
+                    message: 'فشل التحقق من بيانات الكتاب',
                     errors : book.errors.allErrors.collect {
                         message(error: it)
                     }
@@ -183,7 +183,7 @@ class BookRestController extends RestfulController<Book> {
                 status: NOT_FOUND,
                 contentType: 'application/json',
                 text: [
-                    message: 'Book not found'
+                    message: 'الكتاب غير موجود'
                 ] as JSON
             )
 
@@ -213,7 +213,7 @@ class BookRestController extends RestfulController<Book> {
                 status: BAD_REQUEST,
                 contentType: 'application/json',
                 text: [
-                    message: 'Validation failed',
+                    message: 'فشل التحقق من بيانات الكتاب',
                     errors : book.errors.allErrors.collect {
                         message(error: it)
                     }
@@ -249,7 +249,7 @@ class BookRestController extends RestfulController<Book> {
                 status: NOT_FOUND,
                 contentType: 'application/json',
                 text: [
-                    message: 'Book not found'
+                    message: 'الكتاب غير موجود'
                 ] as JSON
             )
 
@@ -296,7 +296,7 @@ class BookRestController extends RestfulController<Book> {
             active               : book.active,
 
             coverUrl             :
-                book.coverData ?
+                (book.coverData || book.externalCoverUrl) ?
                     createLink(
                         controller: 'book',
                         action: 'cover',

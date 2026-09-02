@@ -12,7 +12,7 @@
 
             <div class="mn-auth-visual">
                 <div class="mn-auth-photo" aria-hidden="true">
-                    <asset:image src="main_image.png" alt=""/>
+                    <asset:image src="project_image/main_image.png" alt=""/>
                 </div>
                 <div class="mn-auth-overlay" aria-hidden="true"></div>
 
@@ -75,7 +75,22 @@
 
                     <g:form controller="register" action="save" method="POST" class="mn-auth-form">
                         <div class="mn-auth-field">
-                            <label for="username">اسم المستخدم</label>
+                            <label for="fullName">الاسم الكامل</label>
+                            <div class="mn-auth-input-wrap">
+                                <span class="mn-auth-input-icon"><i class="bi bi-person-vcard"></i></span>
+                                <input type="text"
+                                       name="fullName"
+                                       id="fullName"
+                                       class="form-control mn-auth-input"
+                                       value="${user?.fullName ?: ''}"
+                                       placeholder="الاسم الذي سيظهر في الحجوزات والاستعارات"
+                                       autocomplete="name"
+                                       dir="auto"/>
+                            </div>
+                        </div>
+
+                        <div class="mn-auth-field">
+                            <label for="username">اسم المستخدم / البريد الإلكتروني</label>
                             <div class="mn-auth-input-wrap">
                                 <span class="mn-auth-input-icon"><i class="bi bi-person"></i></span>
                                 <input type="text"
@@ -83,7 +98,7 @@
                                        id="username"
                                        class="form-control mn-auth-input"
                                        value="${user?.username ?: ''}"
-                                       placeholder="اختر اسم مستخدم"
+                                       placeholder="مثال: hadi@example.com"
                                        autocomplete="username"
                                        required
                                        autofocus/>

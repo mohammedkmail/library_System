@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta http-equiv="Content-النوع" content="text/html; charset=UTF-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
@@ -10,7 +10,7 @@
     <asset:link rel="icon" href="favicon.ico" type="image/x-ico"/>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;500;600;700;800&amp;family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
 
     <asset:stylesheet src="application.css"/>
 
@@ -141,6 +141,13 @@
                                 </li>
 
                                 <li>
+                                    <g:link controller="payment" action="index" class="dropdown-item">
+                                        <i class="bi bi-receipt"></i>
+                                        <span>مدفوعاتي</span>
+                                    </g:link>
+                                </li>
+
+                                <li>
                                     <g:link controller="digitalAccess" action="index" class="dropdown-item">
                                         <i class="bi bi-tablet"></i>
                                         <span>مكتبتي الرقمية</span>
@@ -168,7 +175,7 @@
 
                     <sec:ifAnyGranted roles="ROLE_ADMIN">
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle ${controllerName in ['dashboard','bookCopy','borrowing','reservation','purchase','membership','studyRoom','roomReservation'] ? 'active' : ''}"
+                            <a class="nav-link dropdown-toggle ${controllerName in ['dashboard','bookCopy','borrowing','reservation','purchase','membership','studyRoom','roomReservation','payment','holiday','discountRule'] ? 'active' : ''}"
                                href="#"
                                id="adminDropdown"
                                role="button"
@@ -227,6 +234,14 @@
                                         <g:link controller="membership" action="index" class="dropdown-item">
                                             <i class="bi bi-people"></i><span>العضويات</span>
                                         </g:link>
+
+                                        <g:link controller="purchase" action="counterSale" class="dropdown-item">
+                                            <i class="bi bi-shop"></i><span>بيع مباشر من الكاونتر</span>
+                                        </g:link>
+
+                                        <g:link controller="payment" action="index" class="dropdown-item">
+                                            <i class="bi bi-credit-card"></i><span>سجل المدفوعات</span>
+                                        </g:link>
                                     </section>
 
                                     <section>
@@ -238,6 +253,14 @@
 
                                         <g:link controller="roomReservation" action="index" class="dropdown-item">
                                             <i class="bi bi-calendar-check"></i><span>حجوزات الغرف</span>
+                                        </g:link>
+
+                                        <g:link controller="discountRule" action="index" class="dropdown-item">
+                                            <i class="bi bi-percent"></i><span>قواعد الخصم</span>
+                                        </g:link>
+
+                                        <g:link controller="holiday" action="index" class="dropdown-item">
+                                            <i class="bi bi-calendar3"></i><span>تقويم العطل</span>
                                         </g:link>
                                     </section>
                                 </div>

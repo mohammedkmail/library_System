@@ -12,7 +12,7 @@
 
             <div class="mn-auth-visual">
                 <div class="mn-auth-photo" aria-hidden="true">
-                    <asset:image src="main_image.png" alt=""/>
+                    <asset:image src="project_image/main_image.png" alt=""/>
                 </div>
                 <div class="mn-auth-overlay" aria-hidden="true"></div>
 

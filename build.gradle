@@ -62,6 +62,7 @@ dependencies {
     implementation "org.apache.grails:grails-gsp"
 
     implementation "org.apache.grails:grails-spring-security:7.0.0"
+    implementation "com.braintreepayments.gateway:braintree-java:3.53.0"
     
     integrationTestImplementation testFixtures("org.apache.grails:grails-geb")
     profile "org.apache.grails.profiles:web"

@@ -97,8 +97,9 @@ grails:
     controllers:
         defaultScope: singleton
         upload:
-            maxFileSize: 2097152
-            maxRequestSize: 2097152
+            # Controllers accept images up to 5 MB; leave request headroom for multipart metadata.
+            maxFileSize: 5242880
+            maxRequestSize: 6291456
 
     converters:
         encoding: UTF-8
@@ -342,6 +343,9 @@ grails:
 
                     - pattern: /bookCopy/**
                       access: ['ROLE_ADMIN']
+
+                    - pattern: /studyRoom/photo/**
+                      access: ['ROLE_USER', 'ROLE_ADMIN']
 
                     - pattern: /studyRoom/**
                       access: ['ROLE_ADMIN']

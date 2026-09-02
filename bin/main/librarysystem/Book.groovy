@@ -7,11 +7,18 @@ class Book {
     String description
     Integer publishYear
 
+    String publisher
+    Integer pageCount
+    String language
+    String externalCoverUrl
+    String metadataSource
+
     byte[] coverData
     String coverContentType
 
     Integer physicalSaleStock = 0
     BigDecimal physicalSalePrice
+    BigDecimal borrowingFee = 3.00
 
     Boolean digitalAvailable = false
     BigDecimal digitalPurchasePrice
@@ -35,16 +42,23 @@ class Book {
     ]
 
     static constraints = {
-        title nullable: false, blank: false
-        isbn nullable: false, blank: false, unique: true
-        description nullable: true, blank: true
+        title nullable: false, blank: false, maxSize: 300
+        isbn nullable: false, blank: false, unique: true, maxSize: 32
+        description nullable: true, blank: true, maxSize: 8000
         publishYear nullable: true, min: 0
 
+        publisher nullable: true, blank: true, maxSize: 220
+        pageCount nullable: true, min: 1
+        language nullable: true, blank: true, maxSize: 60
+        externalCoverUrl nullable: true, blank: true, url: true, maxSize: 1000
+        metadataSource nullable: true, blank: true, maxSize: 80
+
         coverData nullable: true
-        coverContentType nullable: true
+        coverContentType nullable: true, blank: true, maxSize: 120
 
         physicalSaleStock nullable: false, min: 0
         physicalSalePrice nullable: true, min: 0.0
+        borrowingFee nullable: false, min: 0.0
 
         digitalAvailable nullable: false
         digitalPurchasePrice nullable: true, min: 0.0
@@ -53,13 +67,17 @@ class Book {
         digitalContent nullable: true
 
         active nullable: false
-
         category nullable: false
         author nullable: false
     }
 
     static mapping = {
+        description type: 'text'
         digitalContent type: 'text'
         coverData sqlType: 'LONGBLOB'
+    }
+
+    String toString() {
+        title ?: 'كتاب'
     }
 }

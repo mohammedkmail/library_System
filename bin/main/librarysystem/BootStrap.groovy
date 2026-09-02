@@ -43,6 +43,7 @@ class BootStrap {
             if (!admin) {
                 admin = new User(
                     username: 'mohammad@library.com',
+                    fullName: 'محمد - مدير المكتبة',
                     password: '123456',
                     enabled: true
                 ).save(
@@ -66,6 +67,7 @@ class BootStrap {
             if (!regularUser) {
                 regularUser = new User(
                     username: 'ahmad@library.com',
+                    fullName: 'أحمد محمود',
                     password: '123456',
                     enabled: true
                 ).save(
@@ -88,12 +90,12 @@ class BootStrap {
             // =====================================================
 
             Category programming =
-                Category.findByName('Programming')
+                (Category.findByName('Programming') ?: Category.findByName('البرمجة'))
 
             if (!programming) {
                 programming = new Category(
-                    name: 'Programming',
-                    description: 'Software development, programming languages and software engineering.',
+                    name: 'البرمجة',
+                    description: 'كتب البرمجة وتطوير البرمجيات وهندسة الأنظمة والممارسات المهنية.',
                     active: true
                 ).save(
                     flush: true,
@@ -103,12 +105,12 @@ class BootStrap {
 
 
             Category science =
-                Category.findByName('Science')
+                (Category.findByName('Science') ?: Category.findByName('العلوم'))
 
             if (!science) {
                 science = new Category(
-                    name: 'Science',
-                    description: 'Science, physics, technology and scientific discovery.',
+                    name: 'العلوم',
+                    description: 'كتب العلوم والفيزياء والتقنية والاكتشافات العلمية.',
                     active: true
                 ).save(
                     flush: true,
@@ -118,12 +120,12 @@ class BootStrap {
 
 
             Category fiction =
-                Category.findByName('Fiction')
+                (Category.findByName('Fiction') ?: Category.findByName('الروايات'))
 
             if (!fiction) {
                 fiction = new Category(
-                    name: 'Fiction',
-                    description: 'Novels and imaginative literary works.',
+                    name: 'الروايات',
+                    description: 'الروايات والأعمال الأدبية والقصص التي تبني عوالم وتجارب إنسانية متنوعة.',
                     active: true
                 ).save(
                     flush: true,
@@ -133,12 +135,12 @@ class BootStrap {
 
 
             Category classics =
-                Category.findByName('Classics')
+                (Category.findByName('Classics') ?: Category.findByName('الكلاسيكيات'))
 
             if (!classics) {
                 classics = new Category(
-                    name: 'Classics',
-                    description: 'Classic literature and influential historical works.',
+                    name: 'الكلاسيكيات',
+                    description: 'الأعمال الأدبية الكلاسيكية والكتب المؤثرة التي حافظت على حضورها عبر الزمن.',
                     active: true
                 ).save(
                     flush: true,
@@ -154,70 +156,70 @@ class BootStrap {
             Author robertMartin =
                 findOrCreateAuthor(
                     'Robert C. Martin',
-                    'American software engineer and author known for his work on software craftsmanship and clean code.'
+                    'مهندس برمجيات وكاتب أمريكي، عُرف بأعماله حول الحرفية البرمجية وكتابة الشيفرة النظيفة والقابلة للصيانة.'
                 )
 
 
             Author joshuaBloch =
                 findOrCreateAuthor(
                     'Joshua Bloch',
-                    'Software engineer and author known for his contributions to the Java platform.'
+                    'مهندس برمجيات وكاتب عُرف بإسهاماته في منصة Java وكتاباته حول تصميم واجهات البرمجة وأفضل ممارسات اللغة.'
                 )
 
 
             Author andrewHunt =
                 findOrCreateAuthor(
                     'Andrew Hunt',
-                    'Software developer and author, best known as a co-author of The Pragmatic Programmer.'
+                    'مطور برمجيات وكاتب، اشتهر بمشاركته في تأليف The Pragmatic Programmer وبأفكاره حول الممارسة المهنية للتطوير.'
                 )
 
 
             Author erichGamma =
                 findOrCreateAuthor(
                     'Erich Gamma',
-                    'Swiss computer scientist and software engineer known for his work on software design patterns.'
+                    'عالم حاسوب ومهندس برمجيات سويسري، عُرف بإسهاماته في أنماط تصميم البرمجيات وأدوات التطوير.'
                 )
 
 
             Author martinFowler =
                 findOrCreateAuthor(
                     'Martin Fowler',
-                    'British software developer, author and speaker known for software architecture and refactoring.'
+                    'مطور برمجيات وكاتب ومتحدث بريطاني، عُرف بكتاباته في معمارية البرمجيات وإعادة الهيكلة والتصميم.'
                 )
 
 
             Author georgeOrwell =
                 findOrCreateAuthor(
                     'George Orwell',
-                    'English novelist and essayist known for political and social commentary.'
+                    'روائي وكاتب مقالات إنجليزي، عُرف بأعماله الأدبية التي تناولت السلطة والمجتمع واللغة والنقد السياسي.'
                 )
 
 
             Author fitzgerald =
                 findOrCreateAuthor(
                     'F. Scott Fitzgerald',
-                    'American novelist and writer associated with the Jazz Age.'
+                    'روائي وكاتب أمريكي ارتبط اسمه بعصر الجاز، وكتب عن الطموح والطبقة الاجتماعية والحلم الأمريكي.'
                 )
 
 
             Author janeAusten =
                 findOrCreateAuthor(
                     'Jane Austen',
-                    'English novelist known for works exploring society, relationships and social class.'
+                    'روائية إنجليزية عُرفت بأعمالها التي تناولت المجتمع والعلاقات والطبقات الاجتماعية بأسلوب ساخر ودقيق.'
                 )
 
 
             Author maryShelley =
                 findOrCreateAuthor(
                     'Mary Shelley',
-                    'English novelist best known for the novel Frankenstein.'
+                    'روائية إنجليزية اشتهرت برواية Frankenstein، وتُعد من الأسماء المبكرة والمؤثرة في أدب الخيال العلمي.'
                 )
 
 
             Author stephenHawking =
                 findOrCreateAuthor(
                     'Stephen Hawking',
-                    'British theoretical physicist and cosmologist known for his work on black holes and cosmology.'
+                    'فيزيائي نظري وعالم كونيات بريطاني، عُرف بأبحاثه حول الثقوب السوداء والكون وبقدرته على تبسيط العلوم للجمهور.'
                 )
 
 
@@ -234,7 +236,7 @@ class BootStrap {
                     isbn: '9780132350884',
 
                     description:
-                        'A practical software engineering book focused on writing readable, maintainable and professional code.',
+                        'كتاب عملي في هندسة البرمجيات يركز على كتابة شيفرة واضحة، قابلة للصيانة، وتناسب العمل المهني ضمن الفرق.',
 
                     publishYear: 2008,
 
@@ -250,13 +252,11 @@ class BootStrap {
                     digitalContent: '''
 Clean Code
 
-Digital Preview
+معاينة رقمية
 
-Good software is not only software that works.
-It should also be understandable, maintainable and easy
-for other developers to improve.
+البرمجيات الجيدة لا تكتفي بأن تعمل؛ بل يجب أن تكون مفهومة، قابلة للصيانة، وسهلة التطوير من قبل أعضاء الفريق.
 
-This training page represents protected digital book content.
+هذه صفحة تدريبية لعرض محتوى رقمي محمي داخل نظام المكتبة.
 ''',
 
                     active: true,
@@ -283,7 +283,7 @@ This training page represents protected digital book content.
                     isbn: '9780134685991',
 
                     description:
-                        'A guide to Java programming practices, APIs, object design and effective use of the Java language.',
+                        'دليل عملي لأفضل ممارسات Java وتصميم الكائنات وواجهات البرمجة والاستخدام الفعال للغة في المشاريع الحقيقية.',
 
                     publishYear: 2018,
 
@@ -299,12 +299,11 @@ This training page represents protected digital book content.
                     digitalContent: '''
 Effective Java
 
-Digital Preview
+معاينة رقمية
 
-This training version represents a digital title available
-through the Smart Library digital access system.
+هذه نسخة تدريبية تمثل كتابًا رقميًا داخل نظام المنارة.
 
-Access to this content is controlled by the application.
+يتحقق التطبيق من صلاحية المستخدم قبل السماح بفتح هذا المحتوى.
 ''',
 
                     active: true,
@@ -332,7 +331,7 @@ Access to this content is controlled by the application.
                     isbn: '9780135957059',
 
                     description:
-                        'A software development book about practical thinking, professional habits and building maintainable software.',
+                        'كتاب عن التفكير العملي والعادات المهنية للمطور وبناء برمجيات قابلة للتطوير والصيانة على المدى الطويل.',
 
                     publishYear: 2019,
 
@@ -348,11 +347,9 @@ Access to this content is controlled by the application.
                     digitalContent: '''
 The Pragmatic Programmer
 
-Digital Preview
+معاينة رقمية
 
-Software development involves more than writing syntax.
-Professional developers continuously improve their tools,
-skills and approach to solving problems.
+تطوير البرمجيات يتجاوز كتابة الصياغة البرمجية؛ فالمطور المحترف يطور أدواته ومهاراته وطريقته في حل المشكلات باستمرار.
 ''',
 
                     active: true,
@@ -380,7 +377,7 @@ skills and approach to solving problems.
                     isbn: '9780201633610',
 
                     description:
-                        'A foundational software engineering book describing reusable solutions to common object-oriented design problems.',
+                        'مرجع أساسي في هندسة البرمجيات يشرح حلولًا قابلة لإعادة الاستخدام لمشكلات متكررة في التصميم الكائني.',
 
                     publishYear: 1994,
 
@@ -420,7 +417,7 @@ skills and approach to solving problems.
                     isbn: '9780134757599',
 
                     description:
-                        'A software engineering book focused on improving the internal structure of existing code without changing its behavior.',
+                        'كتاب في هندسة البرمجيات يشرح تحسين البنية الداخلية للشيفرة الموجودة دون تغيير سلوكها الظاهر.',
 
                     publishYear: 2018,
 
@@ -436,12 +433,11 @@ skills and approach to solving problems.
                     digitalContent: '''
 Refactoring
 
-Digital Preview
+معاينة رقمية
 
-Refactoring improves the internal design of software
-while preserving its observable behavior.
+إعادة الهيكلة تحسن التصميم الداخلي للبرمجيات مع الحفاظ على السلوك الظاهر للمستخدم.
 
-This sample page is used by the training application.
+هذه صفحة نموذجية ضمن نظام القراءة الرقمي التدريبي.
 ''',
 
                     active: true,
@@ -469,7 +465,7 @@ This sample page is used by the training application.
                     isbn: '9780451524935',
 
                     description:
-                        'George Orwell\'s dystopian novel about surveillance, authoritarianism, truth and individual freedom.',
+                        'رواية ديستوبية لجورج أورويل تتناول المراقبة والسلطة والحقيقة وحدود الحرية الفردية.',
 
                     publishYear: 1949,
 
@@ -485,12 +481,11 @@ This sample page is used by the training application.
                     digitalContent: '''
 1984
 
-Digital Library Demonstration
+نموذج القراءة الرقمية
 
-This page is a demonstration of how literary digital content
-can be presented inside the Smart Library reader.
+تعرض هذه الصفحة مثالًا لطريقة تقديم المحتوى الأدبي داخل قارئ المنارة الرقمي.
 
-The application controls access before displaying this page.
+يتحقق التطبيق من حق الوصول قبل عرض المحتوى.
 ''',
 
                     active: true,
@@ -518,7 +513,7 @@ The application controls access before displaying this page.
                     isbn: '9780743273565',
 
                     description:
-                        'A classic American novel exploring ambition, wealth, relationships and the American Dream.',
+                        'رواية أمريكية كلاسيكية تستكشف الطموح والثروة والعلاقات الاجتماعية وفكرة الحلم الأمريكي.',
 
                     publishYear: 1925,
 
@@ -534,11 +529,9 @@ The application controls access before displaying this page.
                     digitalContent: '''
 The Great Gatsby
 
-Digital Library Demonstration
+نموذج القراءة الرقمية
 
-This training content represents an electronic reading page.
-The final reader will display the content only to an
-authorized library user.
+يمثل هذا المحتوى صفحة قراءة إلكترونية تدريبية، ولا يظهر القارئ المحتوى إلا للمستخدم الذي يملك صلاحية وصول فعالة.
 ''',
 
                     active: true,
@@ -566,7 +559,7 @@ authorized library user.
                     isbn: '9780141439518',
 
                     description:
-                        'Jane Austen\'s classic novel of family, society, relationships and social expectations.',
+                        'رواية كلاسيكية لجين أوستن تتناول الأسرة والمجتمع والعلاقات والتوقعات الاجتماعية بأسلوب ساخر ودقيق.',
 
                     publishYear: 1813,
 
@@ -582,12 +575,11 @@ authorized library user.
                     digitalContent: '''
 Pride and Prejudice
 
-Digital Library Demonstration
+نموذج القراءة الرقمية
 
-Welcome to the Smart Library digital reader.
+مرحبًا بك في قارئ المنارة الرقمي.
 
-This page demonstrates how a book can later be divided
-into chapters and formatted for comfortable online reading.
+توضح هذه الصفحة كيف يمكن تقسيم الكتاب إلى فصول وتنسيقه لقراءة مريحة عبر النظام.
 ''',
 
                     active: true,
@@ -615,7 +607,7 @@ into chapters and formatted for comfortable online reading.
                     isbn: '9780141439471',
 
                     description:
-                        'Mary Shelley\'s influential novel exploring science, responsibility, creation and human nature.',
+                        'رواية مؤثرة لماري شيلي تستكشف العلم والمسؤولية والخلق والطبيعة الإنسانية وعواقب الطموح غير المنضبط.',
 
                     publishYear: 1818,
 
@@ -631,12 +623,11 @@ into chapters and formatted for comfortable online reading.
                     digitalContent: '''
 Frankenstein
 
-Digital Library Demonstration
+نموذج القراءة الرقمية
 
-This is sample digital content for the library application.
+هذا محتوى رقمي تجريبي لتطبيق المكتبة.
 
-When the reader feature is completed, access will depend
-on the current user's DigitalAccess record.
+يعتمد فتحه على سجل الوصول الرقمي الفعال الخاص بالمستخدم.
 ''',
 
                     active: true,
@@ -664,7 +655,7 @@ on the current user's DigitalAccess record.
                     isbn: '9780553380163',
 
                     description:
-                        'A popular science book introducing major ideas in cosmology, space, time and the universe.',
+                        'كتاب علمي مبسط يقدم أفكارًا رئيسية في علم الكون والفضاء والزمن وطبيعة الكون بلغة موجهة للقارئ العام.',
 
                     publishYear: 1988,
 
@@ -749,6 +740,17 @@ on the current user's DigitalAccess record.
                 12,
                 12.00
             )
+
+
+            // =====================================================
+            // ROOM DISCOUNT RULES
+            // Editable later from the admin dashboard.
+            // =====================================================
+            createDiscountRule('حجز قصير', 0, 23, 0.0, 10)
+            createDiscountRule('حجز يوم إلى أقل من 3 أيام', 24, 71, 5.0, 20)
+            createDiscountRule('حجز 3 أيام إلى أقل من أسبوع', 72, 167, 10.0, 30)
+            createDiscountRule('حجز أسبوع إلى أقل من أسبوعين', 168, 335, 15.0, 40)
+            createDiscountRule('حجز أسبوعين فأكثر', 336, null, 20.0, 50)
         }
     }
 
@@ -815,8 +817,20 @@ on the current user's DigitalAccess record.
 
         if (!StudyRoom.findByRoomNumber(roomNumber)) {
 
+            Map roomProfiles = [
+                'ROOM-101': [name: 'غرفة الزيتونة', location: 'الطابق الأول', features: 'شاشة عرض\nسبورة بيضاء\nمقابس كهرباء\nWi-Fi', description: 'غرفة هادئة للمذاكرة الفردية أو للمجموعات الصغيرة.'],
+                'ROOM-102': [name: 'غرفة القدس', location: 'الطابق الأول', features: 'شاشة عرض\nسبورة\nتكييف\nWi-Fi', description: 'مساحة مرنة للاجتماعات الدراسية والعمل الجماعي.'],
+                'ROOM-201': [name: 'غرفة المنارة', location: 'الطابق الثاني', features: 'شاشة كبيرة\nسبورة ذكية\nمقابس كهرباء\nWi-Fi', description: 'غرفة واسعة للمجموعات ومراجعات المشاريع والعروض.'],
+                'ROOM-202': [name: 'قاعة المعرفة', location: 'الطابق الثاني', features: 'شاشة عرض\nسبورة ذكية\nطاولة اجتماعات\nتكييف\nWi-Fi', description: 'أكبر مساحة دراسة في المكتبة ومناسبة للفرق والجلسات الطويلة.']
+            ]
+            Map profile = roomProfiles[roomNumber] ?: [:]
+
             new StudyRoom(
                 roomNumber: roomNumber,
+                name: profile.name,
+                description: profile.description,
+                location: profile.location,
+                features: profile.features,
                 capacity: capacity,
                 pricePerHour: pricePerHour,
                 active: true
@@ -824,6 +838,21 @@ on the current user's DigitalAccess record.
                 flush: true,
                 failOnError: true
             )
+        }
+    }
+
+
+    private void createDiscountRule(String name, Integer minHours, Integer maxHours,
+                                    BigDecimal percentage, Integer priority) {
+        if (!DiscountRule.findByName(name)) {
+            new DiscountRule(
+                name: name,
+                minHours: minHours,
+                maxHours: maxHours,
+                percentage: percentage,
+                priority: priority,
+                active: true
+            ).save(flush: true, failOnError: true)
         }
     }
 

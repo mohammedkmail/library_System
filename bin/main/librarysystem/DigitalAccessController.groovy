@@ -9,371 +9,79 @@ class DigitalAccessController {
     SpringSecurityService springSecurityService
     DigitalAccessService digitalAccessService
     MembershipService membershipService
+    CheckoutIntentService checkoutIntentService
 
-    static allowedMethods = [
-        rent: 'POST'
-    ]
+    static allowedMethods = [rent: 'POST']
 
     def index() {
-
         digitalAccessService.expireOldRentals()
-
-        User currentUser =
-            springSecurityService.currentUser as User
-
-        boolean admin =
-            isAdmin(currentUser)
-
-        /*
-         * ADMIN:
-         * Show actual DigitalAccess records.
-         */
+        User user = springSecurityService.currentUser as User
+        boolean admin = isAdmin(user)
         if (admin) {
-
-            List<DigitalAccess> digitalAccessList =
-                DigitalAccess.list(
-                    sort: 'startDate',
-                    order: 'desc'
-                )
-
-            respond digitalAccessList,
-                model: [
-                    isAdmin: true
-                ]
-
+            respond DigitalAccess.list(sort: 'startDate', order: 'desc'), model: [isAdmin: true]
             return
         }
 
-
-        /*
-         * USER DIGITAL LIBRARY
-         *
-         * A book can be accessible through:
-         *
-         * 1. PURCHASE
-         * 2. RENTAL
-         * 3. MEMBERSHIP
-         *
-         * We use a Map keyed by book id so the same
-         * book never appears more than once.
-         */
-
-        Map<Long, Map> libraryItems = [:]
-
-
-        /*
-         * --------------------------------------------------
-         * DIGITAL ACCESS RECORDS
-         * --------------------------------------------------
-         */
-
-        List<DigitalAccess> userAccessList =
-            DigitalAccess.findAllByUser(
-                currentUser,
-                [
-                    sort : 'startDate',
-                    order: 'desc'
-                ]
-            )
-
-
-        userAccessList.each { DigitalAccess access ->
-
-            if (!access.book) {
-                return
-            }
-
-
-            if (
-                access.accessType == 'PURCHASE' &&
-                access.status == 'ACTIVE'
-            ) {
-
-                libraryItems[access.book.id] = [
-                    book         : access.book,
-                    source       : 'PURCHASE',
-                    access       : access,
-                    endDate      : null,
-                    permanent    : true
-                ]
-
-                return
-            }
-
-
-            if (
-                access.accessType == 'RENTAL' &&
-                access.status == 'ACTIVE' &&
-                (
-                    access.endDate == null ||
-                    access.endDate.after(new Date())
-                )
-            ) {
-
-                /*
-                 * Purchase always has priority over rental.
-                 */
-                if (!libraryItems.containsKey(access.book.id)) {
-
-                    libraryItems[access.book.id] = [
-                        book      : access.book,
-                        source    : 'RENTAL',
-                        access    : access,
-                        endDate   : access.endDate,
-                        permanent : false
-                    ]
-                }
+        Map<Long, Map> items = [:]
+        DigitalAccess.findAllByUser(user, [sort: 'startDate', order: 'desc']).each { DigitalAccess access ->
+            if (!access.book) return
+            if (access.accessType == 'PURCHASE' && access.status == 'ACTIVE') {
+                items[access.book.id] = [book: access.book, source: 'PURCHASE', access: access, endDate: null, permanent: true]
+            } else if (access.accessType == 'RENTAL' && access.status == 'ACTIVE' && access.endDate?.after(new Date())) {
+                if (!items.containsKey(access.book.id)) items[access.book.id] = [book: access.book, source: 'RENTAL', access: access, endDate: access.endDate, permanent: false]
             }
         }
-
-
-        /*
-         * --------------------------------------------------
-         * COMPLETED DIGITAL PURCHASES
-         *
-         * This also covers old purchase data where a
-         * DigitalAccess record might not have existed.
-         * --------------------------------------------------
-         */
-
-        List<Purchase> digitalPurchases =
-            Purchase.findAllByUserAndPurchaseTypeAndStatus(
-                currentUser,
-                'DIGITAL',
-                'COMPLETED',
-                [
-                    sort : 'purchaseDate',
-                    order: 'desc'
-                ]
-            )
-
-
-        digitalPurchases.each { Purchase purchase ->
-
-            if (!purchase.book) {
-                return
-            }
-
-            libraryItems[purchase.book.id] = [
-                book      : purchase.book,
-                source    : 'PURCHASE',
-                access    : libraryItems[purchase.book.id]?.access,
-                endDate   : null,
-                permanent : true
-            ]
-        }
-
-
-        /*
-         * --------------------------------------------------
-         * MEMBERSHIP INCLUDED DIGITAL BOOKS
-         * --------------------------------------------------
-         */
-
-        if (membershipService.hasActiveMembership(currentUser)) {
-
-            List<Book> membershipBooks =
-                Book.findAllByMembershipIncludedAndDigitalAvailableAndActive(
-                    true,
-                    true,
-                    true,
-                    [
-                        sort : 'title',
-                        order: 'asc'
-                    ]
-                )
-
-
-            membershipBooks.each { Book book ->
-
-                /*
-                 * Do not replace PURCHASE or RENTAL.
-                 */
-                if (!libraryItems.containsKey(book.id)) {
-
-                    libraryItems[book.id] = [
-                        book      : book,
-                        source    : 'MEMBERSHIP',
-                        access    : null,
-                        endDate   : null,
-                        permanent : false
-                    ]
-                }
+        if (membershipService.hasActiveMembership(user)) {
+            Book.findAllByMembershipIncludedAndDigitalAvailableAndActive(true, true, true, [sort: 'title', order: 'asc']).each { Book book ->
+                if (!items.containsKey(book.id)) items[book.id] = [book: book, source: 'MEMBERSHIP', access: null, endDate: null, permanent: false]
             }
         }
-
-
-        List<Map> digitalLibraryItems =
-            libraryItems
-                .values()
-                .toList()
-                .sort { Map item ->
-                    item.book?.title?.toLowerCase()
-                }
-
-
-        render view: 'index',
-            model: [
-                isAdmin            : false,
-                digitalLibraryItems: digitalLibraryItems
-            ]
+        render view: 'index', model: [isAdmin: false, digitalLibraryItems: items.values().toList().sort { it.book?.title?.toLowerCase() }]
     }
-
 
     def show(Long id) {
-
         digitalAccessService.expireOldRentals()
-
-        DigitalAccess digitalAccess =
-            DigitalAccess.get(id)
-
-        if (!digitalAccess) {
-            notFound()
-            return
-        }
-
-
-        User currentUser =
-            springSecurityService.currentUser as User
-
-        boolean admin =
-            isAdmin(currentUser)
-
-
-        if (
-            !admin &&
-            digitalAccess.user?.id != currentUser?.id
-        ) {
-
-            render status: 403
-            return
-        }
-
-
-        boolean canRead =
-            !admin &&
-            digitalAccessService.canAccessBook(
-                currentUser,
-                digitalAccess.book
-            )
-
-
-        respond digitalAccess,
-            model: [
-                isAdmin: admin,
-                canRead: canRead
-            ]
+        DigitalAccess access = DigitalAccess.get(id)
+        if (!access) { notFound(); return }
+        User user = springSecurityService.currentUser as User
+        boolean admin = isAdmin(user)
+        if (!admin && access.user?.id != user.id) { render status: 403; return }
+        Payment payment = Payment.findByPurposeAndTargetIdAndStatus('DIGITAL_RENTAL', access.id, 'COMPLETED')
+        respond access, model: [isAdmin: admin, canRead: !admin && digitalAccessService.canAccessBook(user, access.book), payment: payment]
     }
-
 
     @Secured(['ROLE_USER'])
     def read(Long bookId) {
-
-        digitalAccessService.expireOldRentals()
-
-        User currentUser =
-            springSecurityService.currentUser as User
-
-
-        Book book =
-            Book.get(bookId)
-
-
-        if (!book) {
-            notFound()
-            return
+        User user = springSecurityService.currentUser as User
+        Book book = Book.get(bookId)
+        if (!book) { notFound(); return }
+        if (!digitalAccessService.canAccessBook(user, book)) {
+            flash.message = 'لا تملك وصولًا رقميًا فعالًا لهذا الكتاب.'
+            redirect controller: 'book', action: 'show', id: book.id; return
         }
-
-
-        boolean canRead =
-            digitalAccessService.canAccessBook(
-                currentUser,
-                book
-            )
-
-
-        if (!canRead) {
-
-            flash.message =
-                'You do not currently have digital access to this book.'
-
-            redirect controller: 'book',
-                     action: 'show',
-                     id: book.id
-
-            return
-        }
-
-
-        render view: 'read',
-            model: [
-                book: book
-            ]
+        render view: 'read', model: [book: book]
     }
-
 
     @Secured(['ROLE_USER'])
-    def rent(
-        Long bookId,
-        Integer rentalDays
-    ) {
-
-        User currentUser =
-            springSecurityService.currentUser as User
-
-
-        Book book =
-            Book.get(bookId)
-
-
-        if (!book) {
-            notFound()
-            return
-        }
-
-
+    def rent(Long bookId, Integer rentalDays) {
+        User user = springSecurityService.currentUser as User
+        Book book = Book.get(bookId)
+        if (!book) { notFound(); return }
+        int days = rentalDays ?: 1
         try {
-
-            DigitalAccess digitalAccess =
-                digitalAccessService.grantRentalAccess(
-                    currentUser,
-                    book,
-                    rentalDays ?: 1
-                )
-
-
-            flash.message =
-                'Digital rental created successfully.'
-
-
-            redirect action: 'show',
-                     id: digitalAccess.id
-
-        } catch (
-            IllegalArgumentException |
-            IllegalStateException e
-        ) {
-
-            flash.message =
-                e.message
-
-            redirect controller: 'book',
-                     action: 'show',
-                     id: book.id
+            if (!book.digitalAvailable || book.digitalRentalPrice == null) throw new IllegalStateException('الاستئجار الرقمي غير متاح لهذا الكتاب.')
+            if (days < 1 || days > 30) throw new IllegalArgumentException('مدة الاستئجار من يوم إلى 30 يومًا.')
+            if (digitalAccessService.canAccessBook(user, book)) throw new IllegalStateException('لديك وصول فعال لهذا الكتاب بالفعل.')
+            BigDecimal amount = digitalAccessService.calculateRentalPrice(book, days)
+            CheckoutIntent intent = checkoutIntentService.createIntent(user, 'DIGITAL_RENTAL', amount, book.title,
+                "استئجار رقمي لمدة ${days} يوم", [bookId: book.id, rentalDays: days])
+            redirect controller: 'payment', action: 'checkout', params: [purpose: 'DIGITAL_RENTAL', checkoutToken: intent.token]
+        } catch (Exception e) {
+            flash.message = e.message
+            redirect controller: 'book', action: 'show', id: book.id
         }
     }
 
-
-    private boolean isAdmin(User user) {
-
-        user?.authorities
-            *.authority
-            .contains('ROLE_ADMIN')
-    }
-
-
-    protected void notFound() {
-
-        render status: 404
-    }
+    private boolean isAdmin(User user) { user?.authorities*.authority?.contains('ROLE_ADMIN') }
+    protected void notFound() { render status: 404 }
 }

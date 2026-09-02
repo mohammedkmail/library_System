@@ -189,14 +189,14 @@
 
                         <g:link controller="reservation" action="index" class="mn-dashboard-metric teal">
                             <span class="mn-dashboard-icon"><i class="bi bi-bag-check"></i></span>
-                            <strong>${readyReservationCount ?: 0}</strong>
-                            <small>جاهزة للتسليم</small>
+                            <strong>${paidReservationCount ?: 0}</strong>
+                            <small>مدفوعة وجاهزة للتسليم</small>
                         </g:link>
 
                         <g:link controller="roomReservation" action="index" class="mn-dashboard-metric blue">
                             <span class="mn-dashboard-icon"><i class="bi bi-door-open"></i></span>
-                            <strong>${pendingRoomReservationCount ?: 0}</strong>
-                            <small>حجوزات غرف معلقة</small>
+                            <strong>${confirmedRoomReservationCount ?: 0}</strong>
+                            <small>حجوزات غرف مؤكدة قادمة</small>
                         </g:link>
                     </div>
 
@@ -331,14 +331,14 @@
 
                                     <g:each in="${userReservations.take(Math.min(2, userReservations.size()))}" var="reservation">
                                         <div class="mn-activity-item">
-                                            <span class="mn-activity-symbol ${reservation.status == 'READY' ? 'green' : 'amber'}">
+                                            <span class="mn-activity-symbol ${reservation.status == 'PAID' ? 'green' : 'amber'}">
                                                 <i class="bi bi-bookmark"></i>
                                             </span>
                                             <div class="mn-activity-copy">
                                                 <strong dir="auto">${reservation.book?.title}</strong>
                                                 <small>
-                                                    ${reservation.status == 'READY' ? 'جاهز للاستلام' : 'قيد الانتظار'}
-                                                    <g:if test="${reservation.status == 'READY' && reservation.readyUntil}">
+                                                    <ui:label value="${reservation.status}"/>
+                                                    <g:if test="${reservation.status in ['READY','PAID'] && reservation.readyUntil}">
                                                         <span>•</span>
                                                         حتى <g:formatDate date="${reservation.readyUntil}" format="dd/MM HH:mm"/>
                                                     </g:if>
@@ -428,7 +428,7 @@
                             <article class="mn-book-card">
                                 <g:link controller="book" action="show" id="${book.id}" class="mn-book-cover-link">
                                     <div class="mn-book-cover">
-                                        <g:if test="${book.coverData}">
+                                        <g:if test="${book.coverData || book.externalCoverUrl}">
                                             <img src="${createLink(controller: 'book', action: 'cover', id: book.id)}"
                                                  alt="${book.title}"/>
                                         </g:if>
@@ -627,7 +627,7 @@
                     <g:if test="${upcomingHolidays}">
                         <span class="mn-next-holiday">
                             أقرب عطلة: ${upcomingHolidays[0].name} —
-                            <g:formatDate date="${upcomingHolidays[0].date}" format="dd/MM/yyyy"/>
+                            <g:formatDate date="${upcomingHolidays[0].holidayDate}" format="dd/MM/yyyy"/>
                         </span>
                     </g:if>
                 </div>

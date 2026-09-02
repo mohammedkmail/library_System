@@ -94,6 +94,7 @@
 
         document.querySelectorAll('form').forEach(function (form) {
             form.addEventListener('submit', function () {
+                if (form.dataset.noGlobalSubmitLock === 'true') { return; }
                 if (!form.checkValidity()) {
                     return;
                 }

@@ -13,8 +13,7 @@ class BookCopy {
     ]
 
     static constraints = {
-        copyCode nullable: false, blank: false, unique: true
-
+        copyCode nullable: false, blank: false, unique: true, maxSize: 100
         status nullable: false, blank: false, inList: [
             'AVAILABLE',
             'BORROWED',
@@ -22,7 +21,10 @@ class BookCopy {
             'LOST',
             'DAMAGED'
         ]
-
         book nullable: false
+    }
+
+    String toString() {
+        "${book?.title ?: 'كتاب'} — ${copyCode}"
     }
 }

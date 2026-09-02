@@ -1,574 +1,154 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
 <head>
-
     <meta name="layout" content="main"/>
-
-    <title>
-        Reserve Study Room
-    </title>
-
+    <title>حجز غرفة دراسة | المنارة</title>
 </head>
-
 <body>
-
-<div class="container py-5">
-
-    <g:link action="index"
-            class="text-decoration-none d-inline-block mb-4">
-
-        ← Back to Room Reservations
-
-    </g:link>
-
-
-    <div class="row g-5">
-
-
-        <!-- =================================================
-             INTRO
-        ================================================== -->
-
-        <div class="col-lg-5">
-
-            <div class="text-uppercase small fw-semibold text-muted mb-2">
-                Study Rooms
+<section class="mn-page">
+    <div class="container">
+        <div class="mn-page-head">
+            <div>
+                <span class="mn-kicker">غرف الدراسة</span>
+                <h1>اختر وقتك، شاهد السعر، ثم ادفع</h1>
+                <p>لا يتم إنشاء الحجز النهائي إلا بعد نجاح الدفع. النظام يعيد فحص توفر الغرفة والعطل والسعر لحظة الدفع.</p>
             </div>
-
-
-            <h1 class="display-6 fw-semibold mb-3">
-
-                Reserve a quiet place to work.
-
-            </h1>
-
-
-            <p class="lead text-muted">
-
-                Select a study room and choose your
-                start and end time. The reservation
-                price is calculated from the room's
-                hourly rate.
-
-            </p>
-
-
-            <div class="border-top pt-4 mt-4">
-
-                <div class="small text-muted mb-2">
-                    Reservation rules
-                </div>
-
-                <p class="mb-2">
-                    Start time must be in the future.
-                </p>
-
-                <p class="mb-2">
-                    End time must be later than start time.
-                </p>
-
-                <p class="mb-0">
-                    A room cannot be booked during
-                    an overlapping reservation.
-                </p>
-
-            </div>
-
+            <g:link action="index" class="mn-btn mn-btn-light"><i class="bi bi-clock-history"></i> حجوزاتي</g:link>
         </div>
 
-
-        <!-- =================================================
-             FORM
-        ================================================== -->
-
-        <div class="col-lg-7">
-
-
-            <g:hasErrors bean="${roomReservation}">
-
-                <div class="alert alert-danger">
-
-                    Please review the reservation
-                    information below.
-
+        <g:if test="${upcomingHolidays}">
+            <div class="mn-panel mb-4">
+                <div class="mn-panel-body d-flex flex-wrap gap-3 align-items-center">
+                    <strong><i class="bi bi-calendar-x ms-1"></i> أيام إغلاق قريبة:</strong>
+                    <g:each in="${upcomingHolidays}" var="holiday">
+                        <span class="mn-meta-chip">${holiday.holidayDate ? g.formatDate(date: holiday.holidayDate, format: 'dd/MM/yyyy') : ''} — ${holiday.name}</span>
+                    </g:each>
                 </div>
+            </div>
+        </g:if>
 
-            </g:hasErrors>
-
-
-            <g:if test="${activeRooms}">
-
-                <g:form action="save"
-                        method="POST">
-
-
-                    <!-- ROOM -->
-
-                    <div class="border-top py-4 border-bottom">
-
-                        <label for="studyRoom"
-                               class="form-label fw-semibold">
-
-                            Study Room
-
-                        </label>
-
-
-                        <select
-                            name="studyRoom.id"
-                            id="studyRoom"
-                            class="form-select"
-                            required>
-
-                            <option value="">
-                                Select study room
-                            </option>
-
-
-                            <g:each in="${activeRooms}"
-                                    var="room">
-
-                                <option
-                                    value="${room.id}"
-                                    data-price="${room.pricePerHour}"
-                                    data-capacity="${room.capacity}"
-                                    ${roomReservation?.studyRoom?.id == room.id ? 'selected' : ''}>
-
-                                    Room ${room.roomNumber}
-                                    —
-                                    Capacity ${room.capacity}
-                                    —
-                                    $${room.pricePerHour}/hour
-
-                                </option>
-
-                            </g:each>
-
-                        </select>
-
-
-                        <div id="roomInformation"
-                             class="small text-muted mt-2 d-none">
-
-                            Capacity:
-                            <strong id="selectedCapacity"></strong>
-
-                            <span class="mx-2">•</span>
-
-                            Hourly rate:
-                            <strong id="selectedPrice"></strong>
-
+        <g:if test="${activeRooms}">
+            <g:form action="save" method="POST" id="roomBookingForm">
+                <div class="mn-form-shell">
+                    <div>
+                        <div class="mn-form-section">
+                            <h2>1. اختر الغرفة</h2>
+                            <p>يمكنك تعديل الاسم والصورة والموقع والتجهيزات من لوحة الإدارة.</p>
+                            <div class="mn-room-grid">
+                                <g:each in="${activeRooms}" var="room">
+                                    <label class="mn-room-card position-relative" style="cursor:pointer">
+                                        <input class="position-absolute opacity-0 room-radio" type="radio" name="studyRoom.id" value="${room.id}"
+                                               data-price="${room.pricePerHour}" data-room-name="${room.displayName()}"
+                                               ${roomReservation?.studyRoom?.id == room.id ? 'checked' : ''} required/>
+                                        <div class="mn-room-image">
+                                            <g:if test="${room.imageData}"><img src="${createLink(controller:'studyRoom', action:'photo', id:room.id)}" alt="${room.displayName()}"/></g:if>
+                                            <g:else><i class="bi bi-door-open"></i></g:else>
+                                        </div>
+                                        <div class="mn-room-card-body">
+                                            <div class="d-flex justify-content-between gap-2 align-items-start">
+                                                <h3 dir="auto">${room.displayName()}</h3>
+                                                <strong><ui:money value="${room.pricePerHour}"/><small class="mn-muted">/ساعة</small></strong>
+                                            </div>
+                                            <div class="mn-room-specs">
+                                                <span><i class="bi bi-people"></i> ${room.capacity} أشخاص</span>
+                                                <g:if test="${room.location}"><span><i class="bi bi-geo-alt"></i> ${room.location}</span></g:if>
+                                            </div>
+                                            <g:if test="${room.features}"><p class="small mn-muted mt-2 mb-0" dir="auto">${room.features}</p></g:if>
+                                        </div>
+                                    </label>
+                                </g:each>
+                            </div>
                         </div>
 
+                        <div class="mn-form-section">
+                            <h2>2. حدد الفترة</h2>
+                            <p>الحد الأدنى 30 دقيقة والحد الأقصى 30 يومًا. المكتبة مفتوحة طوال الأسبوع ما عدا أيام الإغلاق في التقويم.</p>
+                            <div class="row g-3">
+                                <div class="col-md-6 mn-field">
+                                    <label for="startTime">بداية الحجز</label>
+                                    <input class="form-control" type="datetime-local" name="startTime" id="startTime"
+                                           value="${roomReservation?.startTime ? g.formatDate(date:roomReservation.startTime, format:"yyyy-MM-dd'T'HH:mm") : ''}" required/>
+                                </div>
+                                <div class="col-md-6 mn-field">
+                                    <label for="endTime">نهاية الحجز</label>
+                                    <input class="form-control" type="datetime-local" name="endTime" id="endTime"
+                                           value="${roomReservation?.endTime ? g.formatDate(date:roomReservation.endTime, format:"yyyy-MM-dd'T'HH:mm") : ''}" required/>
+                                </div>
+                            </div>
+                            <div id="quoteMessage" class="alert d-none mt-3 mb-0"></div>
+                        </div>
                     </div>
 
-
-                    <!-- START -->
-
-                    <div class="py-4 border-bottom">
-
-                        <label for="startTime"
-                               class="form-label fw-semibold">
-
-                            Start Time
-
-                        </label>
-
-
-                        <input
-                            type="datetime-local"
-                            name="startTime"
-                            id="startTime"
-                            value="${roomReservation?.startTime ? g.formatDate(date: roomReservation.startTime, format: "yyyy-MM-dd'T'HH:mm") : ''}"
-                            class="form-control"
-                            required/>
-
-
-                        <div class="text-danger small mt-1">
-
-                            <g:fieldError
-                                bean="${roomReservation}"
-                                field="startTime"/>
-
+                    <aside class="mn-form-aside">
+                        <div class="mn-price-box">
+                            <span class="mn-kicker">ملخص الحجز</span>
+                            <div class="mn-price-line"><span>الغرفة</span><strong id="quoteRoom">—</strong></div>
+                            <div class="mn-price-line"><span>المدة</span><strong id="quoteDuration">—</strong></div>
+                            <div class="mn-price-line"><span>السعر الأساسي</span><strong id="quoteBase">—</strong></div>
+                            <div class="mn-price-line discount"><span id="discountLabel">خصم المدة</span><strong id="quoteDiscount">—</strong></div>
+                            <div class="mn-price-line total"><span>المبلغ قبل الدفع</span><strong id="quoteTotal">—</strong></div>
                         </div>
-
-                    </div>
-
-
-                    <!-- END -->
-
-                    <div class="py-4 border-bottom">
-
-                        <label for="endTime"
-                               class="form-label fw-semibold">
-
-                            End Time
-
-                        </label>
-
-
-                        <input
-                            type="datetime-local"
-                            name="endTime"
-                            id="endTime"
-                            value="${roomReservation?.endTime ? g.formatDate(date: roomReservation.endTime, format: "yyyy-MM-dd'T'HH:mm") : ''}"
-                            class="form-control"
-                            required/>
-
-
-                        <div class="text-danger small mt-1">
-
-                            <g:fieldError
-                                bean="${roomReservation}"
-                                field="endTime"/>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- ERROR -->
-
-                    <div id="timeError"
-                         class="alert alert-danger mt-4 d-none">
-
-                        End time must be later than
-                        start time.
-
-                    </div>
-
-
-                    <!-- PRICE PREVIEW -->
-
-                    <div id="roomPriceSummary"
-                         class="border mt-4 p-4 d-none">
-
-
-                        <div class="d-flex justify-content-between mb-3">
-
-                            <span class="text-muted">
-                                Duration
-                            </span>
-
-                            <strong id="reservationDuration">
-                                —
-                            </strong>
-
-                        </div>
-
-
-                        <div class="d-flex justify-content-between mb-3">
-
-                            <span class="text-muted">
-                                Price per hour
-                            </span>
-
-                            <strong id="hourlyPrice">
-                                —
-                            </strong>
-
-                        </div>
-
-
-                        <div class="border-top pt-3
-                                    d-flex justify-content-between
-                                    align-items-end">
-
-                            <span class="fw-semibold">
-                                Estimated total
-                            </span>
-
-                            <strong id="estimatedTotal"
-                                    class="h4 mb-0">
-
-                                —
-
-                            </strong>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="mt-4">
-
-                        <button type="submit"
-                                id="reserveRoomButton"
-                                class="btn btn-primary">
-
-                            Confirm Reservation
-
+                        <button type="submit" id="continueToPayment" class="mn-btn mn-btn-accent w-100 mt-3" disabled>
+                            متابعة إلى الدفع <i class="bi bi-credit-card"></i>
                         </button>
-
-                    </div>
-
-                </g:form>
-
-            </g:if>
-
-
-            <g:else>
-
-                <div class="alert alert-info">
-
-                    There are currently no active study
-                    rooms available for reservation.
-
+                        <p class="mn-help mt-2 text-center">لن يظهر الحجز في سجلك إلا بعد نجاح Braintree Sandbox.</p>
+                    </aside>
                 </div>
-
-            </g:else>
-
-        </div>
-
+            </g:form>
+        </g:if>
+        <g:else>
+            <div class="mn-panel"><div class="mn-empty"><i class="bi bi-door-closed"></i><h3>لا توجد غرف فعالة حاليًا</h3><p>تواصل مع إدارة المكتبة أو حاول لاحقًا.</p></div></div>
+        </g:else>
     </div>
-
-</div>
-
+</section>
 
 <script>
-
-document.addEventListener(
-    'DOMContentLoaded',
-    function () {
-
-        const roomSelect =
-            document.getElementById('studyRoom');
-
-        const startInput =
-            document.getElementById('startTime');
-
-        const endInput =
-            document.getElementById('endTime');
-
-        const roomInformation =
-            document.getElementById('roomInformation');
-
-        const selectedCapacity =
-            document.getElementById('selectedCapacity');
-
-        const selectedPrice =
-            document.getElementById('selectedPrice');
-
-        const priceSummary =
-            document.getElementById('roomPriceSummary');
-
-        const reservationDuration =
-            document.getElementById('reservationDuration');
-
-        const hourlyPrice =
-            document.getElementById('hourlyPrice');
-
-        const estimatedTotal =
-            document.getElementById('estimatedTotal');
-
-        const timeError =
-            document.getElementById('timeError');
-
-        const submitButton =
-            document.getElementById('reserveRoomButton');
-
-
-        if (
-            !roomSelect ||
-            !startInput ||
-            !endInput
-        ) {
-            return;
-        }
-
-
-        function updateRoomInformation() {
-
-            const option =
-                roomSelect.options[
-                    roomSelect.selectedIndex
-                ];
-
-
-            if (
-                !option ||
-                !option.value
-            ) {
-
-                roomInformation.classList.add('d-none');
-                return;
-            }
-
-
-            const capacity =
-                option.dataset.capacity;
-
-            const price =
-                Number(option.dataset.price);
-
-
-            selectedCapacity.textContent =
-                capacity;
-
-            selectedPrice.textContent =
-                '$' + price.toFixed(2) + '/hour';
-
-
-            roomInformation.classList.remove('d-none');
-        }
-
-
-        function calculatePrice() {
-
-            updateRoomInformation();
-
-
-            const option =
-                roomSelect.options[
-                    roomSelect.selectedIndex
-                ];
-
-
-            if (
-                !option ||
-                !option.value ||
-                !startInput.value ||
-                !endInput.value
-            ) {
-
-                priceSummary.classList.add('d-none');
-                timeError.classList.add('d-none');
-                submitButton.disabled = false;
-
-                return;
-            }
-
-
-            const start =
-                new Date(startInput.value);
-
-            const end =
-                new Date(endInput.value);
-
-
-            if (
-                Number.isNaN(start.getTime()) ||
-                Number.isNaN(end.getTime()) ||
-                end <= start
-            ) {
-
-                priceSummary.classList.add('d-none');
-                timeError.classList.remove('d-none');
-                submitButton.disabled = true;
-
-                return;
-            }
-
-
-            timeError.classList.add('d-none');
-            submitButton.disabled = false;
-
-
-            const pricePerHour =
-                Number(option.dataset.price);
-
-
-            const durationMinutes =
-                (end - start) /
-                (1000 * 60);
-
-
-            const durationHours =
-                durationMinutes / 60;
-
-
-            const totalPrice =
-                durationHours *
-                pricePerHour;
-
-
-            const hours =
-                Math.floor(
-                    durationMinutes / 60
-                );
-
-
-            const minutes =
-                Math.round(
-                    durationMinutes % 60
-                );
-
-
-            let durationText = '';
-
-
-            if (hours > 0) {
-
-                durationText +=
-                    hours +
-                    (
-                        hours === 1
-                            ? ' hour'
-                            : ' hours'
-                    );
-            }
-
-
-            if (minutes > 0) {
-
-                if (durationText) {
-                    durationText += ' ';
-                }
-
-                durationText +=
-                    minutes +
-                    (
-                        minutes === 1
-                            ? ' minute'
-                            : ' minutes'
-                    );
-            }
-
-
-            reservationDuration.textContent =
-                durationText;
-
-
-            hourlyPrice.textContent =
-                '$' +
-                pricePerHour.toFixed(2);
-
-
-            estimatedTotal.textContent =
-                '$' +
-                totalPrice.toFixed(2);
-
-
-            priceSummary.classList.remove('d-none');
-        }
-
-
-        roomSelect.addEventListener(
-            'change',
-            calculatePrice
-        );
-
-
-        startInput.addEventListener(
-            'change',
-            calculatePrice
-        );
-
-
-        endInput.addEventListener(
-            'change',
-            calculatePrice
-        );
-
-
-        updateRoomInformation();
-        calculatePrice();
+(function(){
+    const radios=[...document.querySelectorAll('.room-radio')];
+    const start=document.getElementById('startTime');
+    const end=document.getElementById('endTime');
+    const button=document.getElementById('continueToPayment');
+    const message=document.getElementById('quoteMessage');
+    let timer;
+
+    function money(v){ return '$'+Number(v||0).toFixed(2); }
+    function selected(){ return radios.find(r=>r.checked); }
+    function paint(){
+        radios.forEach(r=>r.closest('.mn-room-card').style.outline=r.checked?'3px solid var(--sl-gold)':'none');
     }
-);
-
+    async function quote(){
+        paint();
+        const room=selected();
+        button.disabled=true;
+        if(!room || !start.value || !end.value) return;
+        clearTimeout(timer);
+        timer=setTimeout(async()=>{
+            const body=new URLSearchParams({studyRoomId:room.value,startTime:start.value,endTime:end.value});
+            try{
+                const response=await fetch('${createLink(controller:"roomReservation",action:"quote")}',{
+                    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}, body:body.toString()
+                });
+                const data=await response.json();
+                message.classList.remove('d-none','alert-danger','alert-success');
+                if(!data.ok){
+                    message.classList.add('alert-danger'); message.textContent=data.message || 'الفترة غير متاحة.'; return;
+                }
+                message.classList.add('alert-success'); message.textContent='الفترة متاحة. سيعاد فحصها لحظة الدفع.';
+                document.getElementById('quoteRoom').textContent=room.dataset.roomName;
+                document.getElementById('quoteDuration').textContent=Number(data.durationHours).toFixed(1)+' ساعة';
+                document.getElementById('quoteBase').textContent=money(data.basePrice);
+                document.getElementById('quoteDiscount').textContent='-'+money(data.discountAmount)+' ('+Number(data.discountPercentage||0).toFixed(0)+'%)';
+                document.getElementById('discountLabel').textContent=data.ruleName || 'خصم المدة';
+                document.getElementById('quoteTotal').textContent=money(data.totalPrice);
+                button.disabled=false;
+            }catch(e){
+                message.classList.remove('d-none','alert-success'); message.classList.add('alert-danger');
+                message.textContent='تعذر حساب السعر الآن. حاول مرة أخرى.';
+            }
+        },350);
+    }
+    radios.forEach(r=>r.addEventListener('change',quote)); start?.addEventListener('change',quote); end?.addEventListener('change',quote); paint(); quote();
+})();
 </script>
-
 </body>
-
 </html>

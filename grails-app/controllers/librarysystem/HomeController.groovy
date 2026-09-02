@@ -8,6 +8,7 @@ class HomeController {
 
     SpringSecurityService springSecurityService
     MembershipService membershipService
+    HolidayCalendarService holidayCalendarService
 
     static allowedMethods = [
         index: 'GET'
@@ -76,42 +77,6 @@ class HomeController {
 
 
         /* =========================================================
-           FEATURED CATEGORIES
-           ========================================================= */
-
-        List<Map> featuredCategories =
-            Category.findAllByActive(
-                true,
-                [
-                    sort : 'name',
-                    order: 'asc'
-                ]
-            ).collect { Category category ->
-
-                [
-                    category : category,
-                    bookCount:
-                        Book.countByCategoryAndActive(
-                            category,
-                            true
-                        )
-                ]
-
-            }.sort { Map first, Map second ->
-
-                int byCount =
-                    (second.bookCount as Long) <=>
-                    (first.bookCount as Long)
-
-                byCount ?: (
-                    first.category.name <=>
-                    second.category.name
-                )
-
-            }.take(8)
-
-
-        /* =========================================================
            MOST BORROWED BOOKS
            ========================================================= */
 
@@ -158,43 +123,6 @@ class HomeController {
 
 
         /* =========================================================
-           POPULAR AUTHORS
-           ========================================================= */
-
-        List<Map> popularAuthors =
-            Author.list(
-                sort: 'name',
-                order: 'asc'
-            ).collect { Author author ->
-
-                [
-                    author   : author,
-                    bookCount:
-                        Book.countByAuthorAndActive(
-                            author,
-                            true
-                        )
-                ]
-
-            }.findAll { Map authorData ->
-
-                (authorData.bookCount as Long) > 0
-
-            }.sort { Map first, Map second ->
-
-                int byCount =
-                    (second.bookCount as Long) <=>
-                    (first.bookCount as Long)
-
-                byCount ?: (
-                    first.author.name <=>
-                    second.author.name
-                )
-
-            }.take(6)
-
-
-        /* =========================================================
            USER DASHBOARD DATA
            ========================================================= */
 
@@ -236,7 +164,8 @@ class HomeController {
 
                     reservation.status in [
                         'WAITING',
-                        'READY'
+                        'READY',
+                        'PAID'
                     ]
 
                 }.take(4)
@@ -251,10 +180,7 @@ class HomeController {
                     ]
                 ).findAll { RoomReservation reservation ->
 
-                    reservation.status in [
-                        'PENDING',
-                        'CONFIRMED'
-                    ] &&
+                    reservation.status == 'CONFIRMED' &&
                     reservation.endTime &&
                     reservation.endTime.after(now)
 
@@ -283,8 +209,8 @@ class HomeController {
         Long activeBorrowingCount = 0L
         Long overdueBorrowingCount = 0L
         Long waitingReservationCount = 0L
-        Long readyReservationCount = 0L
-        Long pendingRoomReservationCount = 0L
+        Long paidReservationCount = 0L
+        Long confirmedRoomReservationCount = 0L
 
         List<Borrowing> urgentBorrowings = []
 
@@ -325,17 +251,15 @@ class HomeController {
                 Reservation.countByStatus('WAITING')
 
 
-            readyReservationCount =
-                Reservation.findAllByStatus('READY')
-                    .count { Reservation reservation ->
+            paidReservationCount =
+                Reservation.countByStatus('PAID')
 
-                        !reservation.readyUntil ||
-                        !reservation.readyUntil.before(now)
+
+            confirmedRoomReservationCount =
+                RoomReservation.findAllByStatus('CONFIRMED')
+                    .count { RoomReservation reservation ->
+                        reservation.endTime && reservation.endTime.after(now)
                     } as Long
-
-
-            pendingRoomReservationCount =
-                RoomReservation.countByStatus('PENDING')
 
 
             urgentBorrowings =
@@ -363,9 +287,7 @@ class HomeController {
             isLibraryUser              : isLibraryUser,
 
             featuredBooks              : featuredBooks,
-            featuredCategories         : featuredCategories,
             popularBooks               : popularBooks,
-            popularAuthors             : popularAuthors,
             borrowCountByBookId         : borrowCountByBookId,
 
             totalBooks                 : totalBooks,
@@ -385,12 +307,13 @@ class HomeController {
             activeBorrowingCount       : activeBorrowingCount,
             overdueBorrowingCount      : overdueBorrowingCount,
             waitingReservationCount    : waitingReservationCount,
-            readyReservationCount      : readyReservationCount,
-            pendingRoomReservationCount: pendingRoomReservationCount,
+            paidReservationCount       : paidReservationCount,
+            confirmedRoomReservationCount: confirmedRoomReservationCount,
             urgentBorrowings           : urgentBorrowings,
 
             membershipPricePerDay      :
-                membershipService.getPricePerDay()
+                membershipService.getPricePerDay(),
+            upcomingHolidays            : holidayCalendarService.upcomingHolidays(3)
         ]
     }
 

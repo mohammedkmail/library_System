@@ -9,192 +9,54 @@ class MembershipController {
     SpringSecurityService springSecurityService
     MembershipService membershipService
 
+    static allowedMethods = [save: 'POST', cancel: 'POST']
 
     def index() {
-
-        User currentUser =
-            springSecurityService.currentUser as User
-
-        List<Membership> memberships
-
-
-        if (isAdmin(currentUser)) {
-
-            memberships =
-                Membership.list(
-                    sort: 'startDate',
-                    order: 'desc'
-                )
-
-        } else {
-
-            memberships =
-                Membership.findAllByUser(
-                    currentUser,
-                    [
-                        sort : 'startDate',
-                        order: 'desc'
-                    ]
-                )
-        }
-
-
-        respond memberships
+        User user = springSecurityService.currentUser as User
+        List<Membership> list = isAdmin(user) ? Membership.list(sort: 'startDate', order: 'desc') :
+            Membership.findAllByUser(user, [sort: 'startDate', order: 'desc'])
+        respond list, model: [isAdmin: isAdmin(user)]
     }
-
 
     def show(Long id) {
-
-        Membership membership =
-            membershipService.get(id)
-
-        if (!membership) {
-            notFound()
-            return
-        }
-
-
-        User currentUser =
-            springSecurityService.currentUser as User
-
-
-        if (
-            !isAdmin(currentUser) &&
-            membership.user.id != currentUser.id
-        ) {
-
-            render status: 403
-            return
-        }
-
-
-        respond membership
+        Membership membership = membershipService.get(id)
+        if (!membership) { notFound(); return }
+        User user = springSecurityService.currentUser as User
+        if (!isAdmin(user) && membership.user?.id != user.id) { render status: 403; return }
+        Payment payment = Payment.findByPurposeAndTargetIdAndStatus('MEMBERSHIP', membership.id, 'COMPLETED')
+        respond membership, model: [isAdmin: isAdmin(user), payment: payment]
     }
 
-
+    @Secured(['ROLE_USER'])
     def create() {
-
-        User currentUser =
-            springSecurityService.currentUser as User
-
-
-        respond new Membership(
-            user: currentUser
-        ),
-        model: [
-            pricePerDay:
-                membershipService.pricePerDay
-        ]
+        User user = springSecurityService.currentUser as User
+        respond new Membership(user: user), model: [pricePerDay: membershipService.pricePerDay]
     }
 
-
+    @Secured(['ROLE_USER'])
     def save() {
-
-        User currentUser =
-            springSecurityService.currentUser as User
-
-
-        Date startDate =
-            params.date(
-                'startDate',
-                'yyyy-MM-dd'
-            )
-
-
-        Date endDate =
-            params.date(
-                'endDate',
-                'yyyy-MM-dd'
-            )
-
-
+        User user = springSecurityService.currentUser as User
+        Date startDate = params.date('startDate', 'yyyy-MM-dd')
+        Date endDate = params.date('endDate', 'yyyy-MM-dd')
         try {
-
-            Membership membership =
-                membershipService.createMembership(
-                    currentUser,
-                    startDate,
-                    endDate
-                )
-
-
-            flash.message =
-                "Membership created successfully. Total price: \$${membership.price}"
-
-
-            redirect(
-                action: 'show',
-                id: membership.id
-            )
-
-        } catch (
-            IllegalArgumentException |
-            IllegalStateException e
-        ) {
-
-            flash.message =
-                e.message
-
-
-            respond new Membership(
-                user: currentUser,
-                startDate: startDate,
-                endDate: endDate
-            ),
-            view: 'create',
-            model: [
-                pricePerDay:
-                    membershipService.pricePerDay
-            ]
+            Membership membership = membershipService.createMembershipRequest(user, startDate, endDate)
+            redirect controller: 'payment', action: 'checkout', params: [purpose: 'MEMBERSHIP', targetId: membership.id]
+        } catch (Exception e) {
+            flash.message = e.message
+            render view: 'create', model: [membership: new Membership(user: user, startDate: startDate, endDate: endDate), pricePerDay: membershipService.pricePerDay]
         }
     }
-
 
     def cancel(Long id) {
-
-        Membership membership =
-            membershipService.get(id)
-
-
-        if (!membership) {
-            notFound()
-            return
-        }
-
-
-        User currentUser =
-            springSecurityService.currentUser as User
-
-
-        if (
-            !isAdmin(currentUser) &&
-            membership.user.id != currentUser.id
-        ) {
-
-            render status: 403
-            return
-        }
-
-
+        Membership membership = membershipService.get(id)
+        if (!membership) { notFound(); return }
+        User user = springSecurityService.currentUser as User
+        if (!isAdmin(user) && membership.user?.id != user.id) { render status: 403; return }
         membershipService.cancelMembership(id)
-
-
-        flash.message =
-            'Membership cancelled successfully.'
-
-
+        flash.message = 'تم إلغاء العضوية.'
         redirect action: 'index'
     }
 
-
-    private boolean isAdmin(User user) {
-
-        user.authorities*.authority
-            .contains('ROLE_ADMIN')
-    }
-
-
-    protected void notFound() {
-        render status: 404
-    }
+    private boolean isAdmin(User user) { user?.authorities*.authority?.contains('ROLE_ADMIN') }
+    protected void notFound() { render status: 404 }
 }

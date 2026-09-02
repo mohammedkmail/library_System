@@ -146,7 +146,7 @@ class CategoryController {
         } catch (ValidationException e) {
 
             flash.message =
-                'Category could not be created. Please fix the errors below.'
+                'تعذر إضافة القسم. راجع الحقول المطلوبة.'
 
             respond category.errors,
                 view: 'create'
@@ -155,7 +155,7 @@ class CategoryController {
         }
 
         flash.message =
-            'Category created successfully.'
+            'تمت إضافة القسم بنجاح.'
 
         redirect action: 'show',
                  id: category.id
@@ -190,7 +190,7 @@ class CategoryController {
         } catch (ValidationException e) {
 
             flash.message =
-                'Category could not be updated. Please fix the errors below.'
+                'تعذر تحديث القسم. راجع الحقول المطلوبة.'
 
             respond category.errors,
                 view: 'edit'
@@ -199,7 +199,7 @@ class CategoryController {
         }
 
         flash.message =
-            'Category updated successfully.'
+            'تم تحديث القسم بنجاح.'
 
         redirect action: 'show',
                  id: category.id
@@ -231,7 +231,7 @@ class CategoryController {
             categoryService.save(category)
 
             flash.message =
-                'Category is used by existing books, so it was deactivated instead of deleted.'
+                'القسم مرتبط بكتب موجودة، لذلك تم تعطيله بدل حذفه.'
 
             redirect action: 'index'
             return
@@ -240,7 +240,7 @@ class CategoryController {
         categoryService.delete(id)
 
         flash.message =
-            'Category deleted successfully.'
+            'تم حذف القسم بنجاح.'
 
         redirect action: 'index'
     }
@@ -259,7 +259,7 @@ class CategoryController {
     protected void notFound() {
 
         flash.message =
-            'Category not found.'
+            'القسم غير موجود.'
 
         redirect action: 'index'
     }

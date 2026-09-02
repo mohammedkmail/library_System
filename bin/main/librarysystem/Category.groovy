@@ -9,8 +9,16 @@ class Category {
     static hasMany = [books: Book]
 
     static constraints = {
-        name nullable: false, blank: false, unique: true
-        description nullable: true, blank: true
+        name nullable: false, blank: false, unique: true, maxSize: 160
+        description nullable: true, blank: true, maxSize: 3000
         active nullable: false
+    }
+
+    static mapping = {
+        description type: 'text'
+    }
+
+    String toString() {
+        name ?: 'قسم'
     }
 }
