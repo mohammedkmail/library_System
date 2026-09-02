@@ -141,8 +141,8 @@ class PaymentController {
                 targetDescription: 'تفعيل العضوية للفترة المختارة',
                 targetIcon: 'bi-person-badge',
                 summaryLines: [
-                    [label: 'من', value: membership.startDate?.format('dd/MM/yyyy')],
-                    [label: 'حتى', value: membership.endDate?.format('dd/MM/yyyy')]
+                    [label: 'من', value: membership.startDate ? new java.text.SimpleDateFormat('dd/MM/yyyy').format(membership.startDate) : null],
+                    [label: 'حتى', value: membership.endDate ? new java.text.SimpleDateFormat('dd/MM/yyyy').format(membership.endDate) : null]
                 ]
             ]
         }
@@ -153,8 +153,8 @@ class PaymentController {
             List summary = []
             if (normalized == 'ROOM_RESERVATION') {
                 summary = [
-                    [label: 'البداية', value: new Date((payload.startTime as Number).longValue()).format('dd/MM/yyyy HH:mm')],
-                    [label: 'النهاية', value: new Date((payload.endTime as Number).longValue()).format('dd/MM/yyyy HH:mm')],
+                    [label: 'البداية', value: new java.text.SimpleDateFormat('dd/MM/yyyy HH:mm').format(new Date((payload.startTime as Number).longValue()))],
+                    [label: 'النهاية', value: new java.text.SimpleDateFormat('dd/MM/yyyy HH:mm').format(new Date((payload.endTime as Number).longValue()))],
                     [label: 'الخصم', value: "${payload.discountPercentage ?: 0}%"]
                 ]
             } else {

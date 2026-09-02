@@ -19,7 +19,7 @@ class RoomReservationService {
 
         Holiday closedHoliday = holidayCalendarService.firstClosedHolidayBetween(startTime, endTime)
         if (closedHoliday) {
-            throw new IllegalStateException("المكتبة مغلقة خلال هذا الحجز بسبب: ${closedHoliday.name} (${closedHoliday.holidayDate.format('dd/MM/yyyy')}).")
+            throw new IllegalStateException("المكتبة مغلقة خلال هذا الحجز بسبب: ${closedHoliday.name} (${new java.text.SimpleDateFormat('dd/MM/yyyy').format(closedHoliday.holidayDate)}).")
         }
 
         discountRuleService.calculate(studyRoom.pricePerHour, startTime, endTime)
