@@ -71,7 +71,14 @@ class PaymentService {
             Membership membership = Membership.lock(targetId)
             validateOwnership(membership?.user, user)
             if (!membership || membership.status != 'PENDING') throw new IllegalStateException('طلب العضوية لم يعد بانتظار الدفع.')
-            amount = membership.price
+
+            Map membershipPricing = membershipService.calculatePricing(membership.startDate, membership.endDate)
+            BigDecimal verifiedMembershipPrice = membershipPricing.totalPrice as BigDecimal
+            if (membership.price.setScale(2, RoundingMode.HALF_UP) != verifiedMembershipPrice.setScale(2, RoundingMode.HALF_UP)) {
+                throw new IllegalStateException('تغيّر سعر العضوية. أعد فتح طلب العضوية قبل الدفع.')
+            }
+
+            amount = verifiedMembershipPrice
             finalizeOperation = { membershipService.activateMembership(membership.id) }
             resolvedTargetId = { membership.id }
 

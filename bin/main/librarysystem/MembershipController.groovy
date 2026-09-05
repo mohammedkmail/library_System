@@ -30,7 +30,7 @@ class MembershipController {
     @Secured(['ROLE_USER'])
     def create() {
         User user = springSecurityService.currentUser as User
-        respond new Membership(user: user), model: [pricePerDay: membershipService.pricePerDay]
+        respond new Membership(user: user), model: membershipPricingModel()
     }
 
     @Secured(['ROLE_USER'])
@@ -43,7 +43,7 @@ class MembershipController {
             redirect controller: 'payment', action: 'checkout', params: [purpose: 'MEMBERSHIP', targetId: membership.id]
         } catch (Exception e) {
             flash.message = e.message
-            render view: 'create', model: [membership: new Membership(user: user, startDate: startDate, endDate: endDate), pricePerDay: membershipService.pricePerDay]
+            render view: 'create', model: [membership: new Membership(user: user, startDate: startDate, endDate: endDate)] + membershipPricingModel()
         }
     }
 
@@ -55,6 +55,13 @@ class MembershipController {
         membershipService.cancelMembership(id)
         flash.message = 'تم إلغاء العضوية.'
         redirect action: 'index'
+    }
+
+    private Map membershipPricingModel() {
+        [
+            pricePerDay  : membershipService.pricePerDay,
+            discountTiers: membershipService.discountTiers
+        ]
     }
 
     private boolean isAdmin(User user) { user?.authorities*.authority?.contains('ROLE_ADMIN') }

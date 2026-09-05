@@ -414,13 +414,15 @@
             </div>
 
             <div class="mn-horizontal-wrap books">
-                <button type="button"
-                        class="mn-scroll-control prev"
-                        data-scroll-target="#popularBooks"
-                        data-scroll-direction="-1"
-                        aria-label="السابق">
-                    <i class="bi bi-chevron-right"></i>
-                </button>
+                <g:if test="${popularBooks?.size() > 6}">
+                    <button type="button"
+                            class="mn-scroll-control prev"
+                            data-scroll-target="#popularBooks"
+                            data-scroll-direction="-1"
+                            aria-label="السابق">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </g:if>
 
                 <div class="mn-book-grid" id="popularBooks">
                     <g:if test="${popularBooks}">
@@ -482,13 +484,15 @@
                     </g:else>
                 </div>
 
-                <button type="button"
-                        class="mn-scroll-control next"
-                        data-scroll-target="#popularBooks"
-                        data-scroll-direction="1"
-                        aria-label="التالي">
-                    <i class="bi bi-chevron-left"></i>
-                </button>
+                <g:if test="${popularBooks?.size() > 6}">
+                    <button type="button"
+                            class="mn-scroll-control next"
+                            data-scroll-target="#popularBooks"
+                            data-scroll-direction="1"
+                            aria-label="التالي">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                </g:if>
             </div>
         </div>
     </section>
@@ -504,11 +508,17 @@
                 <div class="mn-membership-banner">
                     <div class="mn-membership-copy">
                         <span>عضوية المنارة</span>
-                        <h2>وصول أوسع للمكتبة الرقمية والاستعارة.</h2>
+                        <h2>وصول أوسع للمكتبة الرقمية ومزايا عضوية أكثر مرونة.</h2>
                         <p>
-                            سعر العضوية ثابت ومحسوب من النظام:
-                            <strong>$${membershipPricePerDay} يومياً</strong>.
+                            تبدأ العضوية من <strong>$${membershipPricePerDay} يومياً</strong>،
+                            ويُطبَّق خصم تلقائي كلما زادت مدة الاشتراك.
                         </p>
+
+                        <div class="mn-home-membership-tiers">
+                            <g:each in="${membershipDiscountTiers?.reverse()}" var="tier">
+                                <span><b>${tier.percentage}%</b> ${tier.label}</span>
+                            </g:each>
+                        </div>
 
                         <sec:ifAnyGranted roles="ROLE_USER">
                             <g:if test="${hasActiveMembership}">
@@ -571,8 +581,8 @@
 
                         <div>
                             <i class="bi bi-person-badge"></i>
-                            <strong>عضوية مرنة</strong>
-                            <small>السعر يحسب تلقائياً حسب الأيام.</small>
+                            <strong>عضوية أوفر</strong>
+                            <small>خصومات تلقائية للمدد الأطول حتى 20%.</small>
                         </div>
                     </div>
                 </div>
@@ -615,7 +625,7 @@
                         <span class="mn-visit-number">02</span>
                         <i class="bi bi-person-plus"></i>
                         <strong>افتح حسابك</strong>
-                        <small>الحساب هو مفتاح الحجز والاستعارة والشراء والمكتبة الرقمية.</small>
+                        <small>الحساب يفتح لك الحجز والاستعارة والشراء، والعضوية تضيف مزايا رقمية وخصومات مدة.</small>
                     </g:link>
                 </sec:ifNotLoggedIn>
 

@@ -1,41 +1,61 @@
 package librarysystem
 
+import grails.plugin.springsecurity.SpringSecurityService
 import grails.plugin.springsecurity.annotation.Secured
 
 @Secured(['ROLE_USER', 'ROLE_ADMIN'])
 class DashboardController {
 
+    SpringSecurityService springSecurityService
     BorrowingService borrowingService
     PurchaseService purchaseService
     ReservationService reservationService
     RoomReservationService roomReservationService
+    MembershipService membershipService
 
     def index() {
+        User currentUser = springSecurityService.currentUser as User
+        boolean admin = currentUser?.authorities*.authority?.contains('ROLE_ADMIN')
 
-        Long totalBooks = Book.count()
+        if (admin) {
+            render view: 'index', model: [
+                isAdmin                  : true,
+                totalBooks               : Book.count(),
+                activeBorrowings         : borrowingService.countActiveBorrowings(),
+                overdueBorrowings        : borrowingService.countOverdueBorrowings(),
+                waitingReservations      : reservationService.countWaitingReservations(),
+                completedPurchases       : purchaseService.countCompletedPurchases(),
+                totalSales               : purchaseService.totalSales(),
+                confirmedRoomReservations: roomReservationService.countConfirmedReservations()
+            ]
+            return
+        }
 
-        Long activeBorrowings =
-            borrowingService.countActiveBorrowings()
+        Date now = new Date()
+        List<Borrowing> borrowings = Borrowing.findAllByUser(currentUser)
+        List<Reservation> reservations = Reservation.findAllByUser(currentUser)
+        List<Purchase> purchases = Purchase.findAllByUser(currentUser)
+        List<RoomReservation> roomReservations = RoomReservation.findAllByUser(currentUser)
 
-        Long waitingReservations =
-            reservationService.countWaitingReservations()
-
-        Long completedPurchases =
-            purchaseService.countCompletedPurchases()
-
-        BigDecimal totalSales =
-            purchaseService.totalSales()
-
-        Long confirmedRoomReservations =
-            roomReservationService.countConfirmedReservations()
+        Membership activeMembership = membershipService.hasActiveMembership(currentUser) ?
+            Membership.findByUserAndStatus(currentUser, 'ACTIVE') : null
 
         render view: 'index', model: [
-            totalBooks               : totalBooks,
-            activeBorrowings         : activeBorrowings,
-            waitingReservations      : waitingReservations,
-            completedPurchases       : completedPurchases,
-            totalSales               : totalSales,
-            confirmedRoomReservations: confirmedRoomReservations
+            isAdmin                  : false,
+            currentUser              : currentUser,
+            activeBorrowings         : borrowings.count { it.status in ['ACTIVE', 'OVERDUE'] } as Long,
+            overdueBorrowings        : borrowings.count {
+                it.status == 'OVERDUE' || (it.status == 'ACTIVE' && it.dueDate && it.dueDate.before(now))
+            } as Long,
+            activeReservations       : reservations.count { it.status in ['WAITING', 'READY', 'PAID'] } as Long,
+            completedPurchases       : purchases.count { it.status == 'COMPLETED' } as Long,
+            confirmedRoomReservations: roomReservations.count {
+                it.status == 'CONFIRMED' && it.endTime && it.endTime.after(now)
+            } as Long,
+            digitalAccessCount       : DigitalAccess.findAllByUser(currentUser).count {
+                it.status == 'ACTIVE' && (!it.endDate || it.endDate.after(now))
+            } as Long,
+            activeMembership         : activeMembership
         ]
     }
 }

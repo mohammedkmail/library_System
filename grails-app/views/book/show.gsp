@@ -114,13 +114,9 @@
                                     <g:link controller="reservation" action="show" id="${currentReservation.id}">تفاصيل الحجز</g:link>
                                 </div>
                             </g:if>
-                            <g:elseif test="${physicalCopyCount > 0 && hasActiveMembership}">
-                                <p>احجز العنوان، وسيقوم موظف المكتبة بتجهيز نسخة فعلية لك عند توفرها.</p>
-                                <g:form controller="reservation" action="reserve" method="POST"><g:hiddenField name="bookId" value="${book.id}"/><button type="submit" class="mn-solid-action"><i class="bi bi-bookmark-plus"></i> حجز نسخة</button></g:form>
-                            </g:elseif>
                             <g:elseif test="${physicalCopyCount > 0}">
-                                <p>تحتاج إلى عضوية مفعلة لحجز واستعارة الكتب الورقية.</p>
-                                <g:link controller="membership" action="create" class="mn-solid-action">تفعيل عضوية</g:link>
+                                <p>يمكن لأي مستخدم مسجّل حجز نسخة ورقية. عند تجهيز النسخة تُستكمل رسوم الاستعارة المحددة للكتاب قبل الاستلام.</p>
+                                <g:form controller="reservation" action="reserve" method="POST"><g:hiddenField name="bookId" value="${book.id}"/><button type="submit" class="mn-solid-action"><i class="bi bi-bookmark-plus"></i> حجز نسخة</button></g:form>
                             </g:elseif>
                             <g:else><p>لا توجد نسخ مخصصة للإعارة لهذا العنوان حاليًا.</p></g:else>
                         </div>

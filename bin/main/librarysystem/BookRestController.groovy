@@ -1,6 +1,7 @@
 package librarysystem
 
 import grails.converters.JSON
+import grails.plugin.springsecurity.SpringSecurityService
 import grails.plugin.springsecurity.annotation.Secured
 import grails.rest.RestfulController
 import grails.validation.ValidationException
@@ -13,6 +14,7 @@ class BookRestController extends RestfulController<Book> {
     static responseFormats = ['json']
 
     BookService bookService
+    SpringSecurityService springSecurityService
 
     BookRestController() {
         super(Book)
@@ -40,35 +42,36 @@ class BookRestController extends RestfulController<Book> {
         String search =
             params.search?.trim()
 
+        User currentUser = springSecurityService.currentUser as User
+        boolean admin = isAdmin(currentUser)
+
         List<Book> books
         Long total
 
         if (search) {
-
-            books =
-                bookService.findAllByTitleIlike(
+            if (admin) {
+                books = bookService.findAllByTitleIlike(
                     "%${search}%",
-                    [
-                        max   : params.max,
-                        offset: params.offset
-                    ]
+                    [max: params.max, offset: params.offset]
                 )
-
-            total =
-                bookService.countByTitleIlike(
-                    "%${search}%"
+                total = bookService.countByTitleIlike("%${search}%")
+            } else {
+                books = Book.findAllByActiveAndTitleIlike(
+                    true,
+                    "%${search}%",
+                    [max: params.max, offset: params.offset]
                 )
-
+                total = Book.countByActiveAndTitleIlike(true, "%${search}%")
+            }
+        } else if (admin) {
+            books = bookService.list([max: params.max, offset: params.offset])
+            total = bookService.count()
         } else {
-
-            books =
-                bookService.list([
-                    max   : params.max,
-                    offset: params.offset
-                ])
-
-            total =
-                bookService.count()
+            books = Book.findAllByActive(
+                true,
+                [max: params.max, offset: params.offset, sort: 'title', order: 'asc']
+            )
+            total = Book.countByActive(true)
         }
 
         List<Map> bookData =
@@ -96,7 +99,9 @@ class BookRestController extends RestfulController<Book> {
         Book book =
             bookService.get(id)
 
-        if (!book) {
+        User currentUser = springSecurityService.currentUser as User
+
+        if (!book || (book.active != true && !isAdmin(currentUser))) {
 
             render(
                 status: NOT_FOUND,
@@ -259,6 +264,10 @@ class BookRestController extends RestfulController<Book> {
         bookService.delete(id)
 
         render status: NO_CONTENT
+    }
+
+    private boolean isAdmin(User user) {
+        user?.authorities*.authority?.contains('ROLE_ADMIN')
     }
 
     /*

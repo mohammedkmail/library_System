@@ -10628,3 +10628,521 @@ h1, h2, h3, h4, h5, h6,
 .mn-digital-rental-form small { flex-basis:100%; color:var(--sl-muted); }
 .mn-inline-number-field { display:flex; align-items:center; gap:.4rem; margin-top:.35rem; font-weight:600; color:var(--sl-muted); }
 .mn-inline-number-field input { width:78px; min-height:39px; border:1px solid var(--sl-border); border-radius:10px; padding:.35rem .55rem; background:#fff; }
+
+/* =========================================================
+   FINAL PRESENTATION POLISH — 2026-09
+   UI-only improvements for the home carousel, catalog hover,
+   role-aware dashboard, membership pricing and account/search.
+   ========================================================= */
+
+/* Navbar: the username is an e-mail in this project, so give it room. */
+body.manara-site .manara-account-button {
+    max-width: 310px;
+    min-width: 150px;
+    padding-inline: .58rem .8rem;
+}
+body.manara-site .manara-account-name {
+    max-width: 205px;
+    direction: ltr;
+    text-align: left;
+}
+
+/* Catalog search must remain RTL even while the field is empty. */
+body.manara-site .mn-catalog-search input {
+    direction: rtl;
+    text-align: right;
+}
+body.manara-site .mn-catalog-search input::placeholder {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Home book rail: six visible cards on desktop, extra books scroll horizontally. */
+body.manara-site .mn-book-grid {
+    display: flex;
+    grid-template-columns: none;
+    gap: .85rem;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x proximity;
+    scroll-behavior: smooth;
+}
+body.manara-site .mn-book-grid .mn-book-card {
+    flex: 0 0 calc((100% - 4.25rem) / 6);
+    min-width: 178px;
+    scroll-snap-align: start;
+}
+body.manara-site .mn-book-action,
+body.manara-site .mn-banner-action,
+body.manara-site .mn-final-primary {
+    color: #fff !important;
+}
+body.manara-site .mn-book-action:hover,
+body.manara-site .mn-banner-action:hover,
+body.manara-site .mn-final-primary:hover {
+    color: #fff !important;
+}
+
+/* Hero statistics become interactive visual shortcuts, not static counters. */
+body.manara-home-page .mn-cinematic-stat {
+    position: relative;
+    border-radius: 14px;
+    transition: transform .22s ease, background-color .22s ease, box-shadow .22s ease;
+}
+body.manara-home-page .mn-cinematic-stat:hover {
+    transform: translateY(-5px);
+    background: rgba(255,255,255,.10);
+    box-shadow: 0 15px 32px rgba(0,0,0,.14);
+}
+body.manara-home-page .mn-cinematic-stat-icon {
+    transition: transform .24s ease, background-color .24s ease, color .24s ease;
+}
+body.manara-home-page .mn-cinematic-stat:hover .mn-cinematic-stat-icon {
+    transform: rotate(-7deg) scale(1.09);
+    background: rgba(255,255,255,.17);
+    color: #f7d38b;
+}
+body.manara-home-page .mn-cinematic-stat strong {
+    transition: transform .22s ease;
+}
+body.manara-home-page .mn-cinematic-stat:hover strong {
+    transform: translateX(-2px);
+}
+
+/* Membership banner contrast and depth. */
+body.manara-site .mn-membership-copy h2 {
+    color: #f8f0dc;
+    text-shadow: 0 2px 18px rgba(0,0,0,.18);
+}
+body.manara-site .mn-membership-copy > span {
+    color: #8ce0d6;
+    letter-spacing: .04em;
+}
+body.manara-site .mn-membership-banner {
+    isolation: isolate;
+}
+body.manara-site .mn-membership-banner::before {
+    content: "";
+    position: absolute;
+    width: 210px;
+    height: 210px;
+    inset-inline-start: -75px;
+    top: -95px;
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 50%;
+    box-shadow: 0 0 0 34px rgba(255,255,255,.025), 0 0 0 68px rgba(255,255,255,.018);
+    pointer-events: none;
+}
+
+/* "Everything you need" panel: more editorial, less stock-card. */
+body.manara-site .mn-why-panel {
+    position: relative;
+    overflow: hidden;
+    border-color: #dce8e2;
+    background:
+        radial-gradient(circle at 8% 8%, rgba(31,141,128,.11), transparent 30%),
+        linear-gradient(135deg, #fffdf8 0%, #f5fbf8 100%);
+    box-shadow: 0 18px 42px rgba(22,70,59,.08);
+}
+body.manara-site .mn-why-heading h2 {
+    color: #163f39;
+    font-family: Georgia, "Times New Roman", "Noto Kufi Arabic", serif;
+    font-size: clamp(1.55rem, 2vw, 2.05rem);
+}
+body.manara-site .mn-why-grid > div {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(20,99,87,.08);
+    background: rgba(255,255,255,.78);
+    transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+body.manara-site .mn-why-grid > div::after {
+    content: "";
+    position: absolute;
+    width: 72px;
+    height: 72px;
+    inset-inline-end: -30px;
+    bottom: -34px;
+    border-radius: 50%;
+    background: rgba(24,125,111,.08);
+    transition: transform .25s ease;
+}
+body.manara-site .mn-why-grid > div:hover {
+    transform: translateY(-6px) rotate(.25deg);
+    border-color: rgba(20,99,87,.22);
+    box-shadow: 0 16px 28px rgba(23,73,63,.10);
+}
+body.manara-site .mn-why-grid > div:hover::after {
+    transform: scale(1.45);
+}
+body.manara-site .mn-why-grid > div:hover i {
+    transform: translateY(-2px) rotate(-8deg) scale(1.08);
+}
+body.manara-site .mn-why-grid i {
+    transition: transform .22s ease;
+}
+body.manara-site .mn-why-grid strong {
+    font-family: "Alexandria", "Noto Kufi Arabic", sans-serif;
+}
+
+/* Visit cards: motion, accent stripe and distinct personalities. */
+body.manara-site .mn-visit-card {
+    isolation: isolate;
+    transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease;
+}
+body.manara-site .mn-visit-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    inset-inline: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #1d8175, #d5a35d);
+    transform: scaleX(.28);
+    transform-origin: right;
+    transition: transform .25s ease;
+}
+body.manara-site .mn-visit-card:nth-child(2)::before {
+    background: linear-gradient(90deg, #6d5ea8, #35a8a0);
+}
+body.manara-site .mn-visit-card:nth-child(3)::before {
+    background: linear-gradient(90deg, #c18a52, #e1c37c);
+}
+body.manara-site .mn-visit-card:hover {
+    transform: translateY(-9px);
+    border-color: rgba(27,112,97,.25);
+    box-shadow: 0 24px 44px rgba(20,65,56,.12);
+}
+body.manara-site .mn-visit-card:hover::before {
+    transform: scaleX(1);
+}
+body.manara-site .mn-visit-card > i,
+body.manara-site .mn-visit-number {
+    transition: transform .24s ease, color .24s ease, background-color .24s ease;
+}
+body.manara-site .mn-visit-card:hover > i {
+    transform: translateY(-3px) rotate(-7deg) scale(1.08);
+    background: #dff2eb;
+}
+body.manara-site .mn-visit-card:hover .mn-visit-number {
+    transform: translateY(4px) scale(1.22);
+    color: rgba(23,111,97,.24);
+}
+body.manara-site .mn-visit-card strong {
+    font-size: 1.12rem;
+    letter-spacing: -.01em;
+}
+
+/* Catalog cards: visible feedback when the pointer is over a book. */
+body.manara-site .mn-library-book-card {
+    overflow: hidden;
+    transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease;
+}
+body.manara-site .mn-library-book-card:hover {
+    transform: translateY(-7px);
+    border-color: rgba(22,112,96,.24);
+    box-shadow: 0 24px 48px rgba(22,58,50,.11);
+}
+body.manara-site .mn-library-cover img {
+    transition: transform .36s ease, filter .36s ease;
+}
+body.manara-site .mn-library-book-card:hover .mn-library-cover img {
+    transform: scale(1.055);
+    filter: saturate(1.06) contrast(1.02);
+}
+body.manara-site .mn-library-book-card .mn-text-action i {
+    transition: transform .2s ease;
+}
+body.manara-site .mn-library-book-card:hover .mn-text-action i {
+    transform: translateX(-4px);
+}
+body.manara-site .mn-library-book-card::before {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    width: 140px;
+    height: 140px;
+    inset-inline-end: -95px;
+    top: -95px;
+    border-radius: 50%;
+    background: rgba(26,126,111,.055);
+    transition: transform .3s ease;
+}
+body.manara-site .mn-library-book-card:hover::before {
+    transform: scale(1.7);
+}
+body.manara-site .mn-library-book-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Membership duration-discount chooser. */
+.mn-membership-pricing-shell {
+    max-width: 1080px;
+}
+.mn-membership-tier-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap: .65rem;
+    margin-top: 1.2rem;
+}
+.mn-membership-tier {
+    min-height: 118px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: .9rem;
+    border: 1px solid #d9e2dd;
+    border-radius: 13px;
+    background: #fbfdfc;
+    transition: transform .2s ease, border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+}
+.mn-membership-tier span { color: #687871; font-size: .74rem; }
+.mn-membership-tier strong { margin: .2rem 0; color: #176f61; font-size: 1.45rem; }
+.mn-membership-tier small { color: #929b97; font-size: .68rem; }
+.mn-membership-tier.active {
+    transform: translateY(-4px);
+    border-color: #238779;
+    background: #edf8f4;
+    box-shadow: 0 12px 25px rgba(28,111,96,.10);
+}
+.mn-membership-price-box .mn-price-line.discount strong {
+    color: #21806f;
+}
+
+/* Dashboard role clarity. */
+body.manara-site .mn-dashboard-card {
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+body.manara-site .mn-dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 18px 34px rgba(21,65,56,.10);
+}
+body.manara-site .mn-dashboard-card.warning .mn-dashboard-card-icon {
+    color: #9d6325;
+    background: #fff3df;
+}
+body.manara-site .mn-dashboard-card.membership-active {
+    border-color: rgba(28,127,107,.28);
+    background: linear-gradient(135deg,#f9fffc,#eef8f4);
+}
+body.manara-site .dashboard-text-value {
+    font-size: 1.08rem !important;
+}
+
+@media (max-width: 991.98px) {
+    body.manara-site .mn-book-grid .mn-book-card {
+        flex-basis: 205px;
+        min-width: 205px;
+    }
+    .mn-membership-tier-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+
+@media (max-width: 767.98px) {
+    body.manara-site .manara-account-button { min-width: 0; max-width: 62px; }
+    body.manara-site .mn-book-grid .mn-book-card { flex-basis: 180px; min-width: 180px; }
+    .mn-membership-tier-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.mn-home-membership-tiers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .38rem;
+    margin: -.25rem 0 1rem;
+}
+.mn-home-membership-tiers span {
+    padding: .32rem .5rem;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 999px;
+    background: rgba(255,255,255,.07);
+    color: #d8eee9;
+    font-size: .66rem;
+}
+.mn-home-membership-tiers b { color: #f2cb82; }
+
+/* =========================================================
+   FINAL BOOK CATALOG COMPACT PASS
+   Smaller cards, straight typography, clearer hover feedback.
+   ========================================================= */
+body.manara-site .mn-books-catalog .mn-catalog-search,
+body.manara-site .mn-books-catalog .mn-catalog-search input {
+    direction: rtl;
+    text-align: right;
+}
+
+body.manara-site .mn-books-catalog .mn-library-shelf-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+body.manara-site .mn-books-catalog .mn-library-book-card {
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    flex-direction: column;
+    gap: 0;
+    padding: .72rem;
+    border-radius: 14px;
+    background: #fff;
+    transform: none;
+    rotate: 0deg;
+    writing-mode: horizontal-tb;
+}
+
+body.manara-site .mn-books-catalog .mn-library-book-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(22,112,96,.25);
+    box-shadow: 0 18px 34px rgba(22,58,50,.10);
+}
+
+body.manara-site .mn-books-catalog .mn-library-book-card::after {
+    display: none;
+}
+
+body.manara-site .mn-books-catalog .mn-library-cover {
+    width: 100%;
+    height: 225px;
+    min-height: 225px;
+    border-radius: 10px;
+    box-shadow: 0 8px 18px rgba(21,41,36,.10);
+    transform: none;
+    rotate: 0deg;
+}
+
+body.manara-site .mn-books-catalog .mn-library-cover-placeholder {
+    min-height: 225px;
+}
+
+body.manara-site .mn-books-catalog .mn-library-book-copy {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    padding: .72rem .08rem .08rem;
+    direction: rtl;
+    text-align: right;
+    transform: none;
+    rotate: 0deg;
+    writing-mode: horizontal-tb;
+}
+
+body.manara-site .mn-books-catalog .mn-book-card-topline {
+    min-width: 0;
+    font-size: .66rem;
+}
+
+body.manara-site .mn-books-catalog .mn-book-card-topline > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.manara-site .mn-books-catalog .mn-library-book-copy h2 {
+    min-height: 2.75em;
+    margin: .42rem 0 .14rem;
+    overflow: hidden;
+    font-size: 1rem;
+    line-height: 1.38;
+    text-align: start;
+    transform: none;
+    rotate: 0deg;
+    writing-mode: horizontal-tb;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+body.manara-site .mn-books-catalog .mn-library-book-copy h2 a {
+    display: inline;
+    color: #18322e;
+    transform: none;
+    rotate: 0deg;
+}
+
+body.manara-site .mn-books-catalog .mn-library-book-card:hover .mn-library-book-copy h2 a {
+    color: #0f7568;
+}
+
+body.manara-site .mn-books-catalog .mn-book-author {
+    margin: 0 0 .55rem;
+    overflow: hidden;
+    color: #7e7068;
+    font-size: .74rem;
+    line-height: 1.45;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transform: none;
+    rotate: 0deg;
+}
+
+body.manara-site .mn-books-catalog .mn-book-card-desc {
+    display: none;
+}
+
+body.manara-site .mn-books-catalog .mn-book-card-facts {
+    gap: .35rem .58rem;
+    margin-top: auto;
+    padding-top: .3rem;
+    font-size: .64rem;
+}
+
+body.manara-site .mn-books-catalog .mn-book-card-actions {
+    margin-top: .62rem;
+    padding-top: .58rem;
+}
+
+body.manara-site .mn-books-catalog .mn-text-action {
+    font-size: .7rem;
+}
+
+body.manara-site .mn-books-catalog .mn-book-sequence {
+    top: .9rem;
+    inset-inline-end: .95rem;
+    padding: .15rem .35rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,.88);
+    color: #71817b;
+    backdrop-filter: blur(5px);
+}
+
+body.manara-site .mn-books-catalog .mn-library-book-card:hover .mn-library-cover img {
+    transform: scale(1.045);
+}
+
+@media (max-width: 1199.98px) {
+    body.manara-site .mn-books-catalog .mn-library-shelf-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    body.manara-site .mn-books-catalog .mn-library-shelf-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .75rem;
+    }
+    body.manara-site .mn-books-catalog .mn-library-cover,
+    body.manara-site .mn-books-catalog .mn-library-cover-placeholder {
+        height: 190px;
+        min-height: 190px;
+    }
+}
+
+@media (max-width: 479.98px) {
+    body.manara-site .mn-books-catalog .mn-library-shelf-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: .58rem;
+    }
+    body.manara-site .mn-books-catalog .mn-library-book-card {
+        padding: .55rem;
+    }
+    body.manara-site .mn-books-catalog .mn-library-cover,
+    body.manara-site .mn-books-catalog .mn-library-cover-placeholder {
+        height: 165px;
+        min-height: 165px;
+    }
+    body.manara-site .mn-books-catalog .mn-library-book-copy h2 {
+        font-size: .9rem;
+    }
+    body.manara-site .mn-books-catalog .mn-book-card-facts span:nth-child(n+2) {
+        display: none;
+    }
+}

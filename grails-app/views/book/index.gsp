@@ -22,7 +22,7 @@
         <div class="mn-catalog-toolbar">
             <g:form action="index" method="GET" class="mn-catalog-search">
                 <i class="bi bi-search"></i>
-                <input type="search" name="search" value="${search ?: ''}" placeholder="ابحث بعنوان الكتاب، المؤلف، ISBN أو القسم..." autocomplete="off" dir="auto"/>
+                <input type="search" name="search" value="${search ?: ''}" placeholder="ابحث بعنوان الكتاب، المؤلف، ISBN أو القسم..." autocomplete="off" dir="rtl"/>
                 <button type="submit">بحث</button>
             </g:form>
             <g:if test="${search}"><g:link action="index" class="mn-clear-search"><i class="bi bi-x-lg"></i> مسح البحث</g:link></g:if>

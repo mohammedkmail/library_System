@@ -5,7 +5,6 @@ import grails.gorm.transactions.Transactional
 @Transactional
 class BorrowingService {
 
-    MembershipService membershipService
     ReservationService reservationService
 
     Borrowing get(Serializable id) { Borrowing.get(id) }
@@ -110,8 +109,8 @@ class BorrowingService {
 
     private void validateBorrower(User user) {
         if (!user) throw new IllegalArgumentException('المستخدم مطلوب.')
-        if (!membershipService.hasActiveMembership(user)) {
-            throw new IllegalStateException('يلزم وجود عضوية فعالة لاستعارة الكتب.')
+        if (!user.enabled || user.accountLocked || user.accountExpired) {
+            throw new IllegalStateException('الحساب غير مؤهل للاستعارة حاليًا.')
         }
     }
 

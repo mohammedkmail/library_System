@@ -25,3 +25,6 @@ bin/
 *.bak-*
 *.timestamp.bak
 *.before-*
+
+# Editor/manual backup snapshots
+*.save

@@ -1,3 +1,142 @@
-<!doctype html><html><head><meta name="layout" content="main"/><title>تفعيل عضوية | المنارة</title></head><body><section class="mn-page"><div class="container"><div class="mn-page-head"><div><span class="mn-kicker">عضوية المنارة</span><h1>اختر فترة العضوية</h1><p>بعد اختيار الفترة يظهر السعر، ثم يتم التفعيل فقط بعد نجاح الدفع.</p></div><g:link action="index" class="mn-btn mn-btn-light">عضوياتي</g:link></div>
-<g:form action="save" method="POST"><div class="mn-form-shell"><div class="mn-form-section"><div class="row g-3"><div class="col-md-6 mn-field"><label>تاريخ البداية</label><input type="date" name="startDate" id="membershipStart" class="form-control" value="${membership?.startDate ? g.formatDate(date: membership?.startDate, format: 'yyyy-MM-dd') : ''}" required/></div><div class="col-md-6 mn-field"><label>تاريخ النهاية</label><input type="date" name="endDate" id="membershipEnd" class="form-control" value="${membership?.endDate ? g.formatDate(date: membership?.endDate, format: 'yyyy-MM-dd') : ''}" required/></div></div><div id="membershipError" class="alert alert-danger d-none"></div><button class="mn-btn mn-btn-primary mt-3">متابعة إلى الدفع</button></div><aside class="mn-form-aside"><div class="mn-price-box"><span class="mn-kicker">ملخص السعر</span><div class="mn-price-line"><span>عدد الأيام</span><strong id="membershipDays">—</strong></div><div class="mn-price-line"><span>السعر لليوم</span><strong><ui:money value="${pricePerDay}"/></strong></div><div class="mn-price-line total"><span>الإجمالي</span><strong id="membershipTotal">—</strong></div></div></aside></div></g:form>
-</div></section><script>(function(){const s=document.getElementById('membershipStart'),e=document.getElementById('membershipEnd'),d=document.getElementById('membershipDays'),t=document.getElementById('membershipTotal'),x=document.getElementById('membershipError'),rate=Number('${pricePerDay ?: 0}');function u(){x.classList.add('d-none');if(!s.value||!e.value){d.textContent='—';t.textContent='—';return}const a=new Date(s.value+'T00:00:00'),b=new Date(e.value+'T00:00:00'),days=Math.floor((b-a)/86400000)+1;if(days<1){x.textContent='تاريخ النهاية يجب ألا يسبق تاريخ البداية.';x.classList.remove('d-none');d.textContent='—';t.textContent='—';return}d.textContent=days+' يوم';t.textContent='$'+(days*rate).toFixed(2)}s.addEventListener('change',u);e.addEventListener('change',u);u();})();</script></body></html>
+<!doctype html>
+<html>
+<head>
+    <meta name="layout" content="main"/>
+    <title>تفعيل عضوية | المنارة</title>
+</head>
+<body>
+<section class="mn-page mn-membership-create-page">
+    <div class="container">
+        <div class="mn-page-head">
+            <div>
+                <span class="mn-kicker">عضوية المنارة</span>
+                <h1>اختر فترة العضوية</h1>
+                <p>كلما طالت مدة الاشتراك حصلت على خصم أكبر. السعر النهائي يُعاد حسابه والتحقق منه على الخادم قبل الدفع.</p>
+            </div>
+            <g:link action="index" class="mn-btn mn-btn-light">عضوياتي</g:link>
+        </div>
+
+        <g:form action="save" method="POST">
+            <div class="mn-form-shell mn-membership-pricing-shell">
+                <div class="mn-form-section">
+                    <div class="row g-3">
+                        <div class="col-md-6 mn-field">
+                            <label>تاريخ البداية</label>
+                            <input type="date" name="startDate" id="membershipStart" class="form-control"
+                                   value="${membership?.startDate ? g.formatDate(date: membership?.startDate, format: 'yyyy-MM-dd') : ''}" required/>
+                        </div>
+                        <div class="col-md-6 mn-field">
+                            <label>تاريخ النهاية</label>
+                            <input type="date" name="endDate" id="membershipEnd" class="form-control"
+                                   value="${membership?.endDate ? g.formatDate(date: membership?.endDate, format: 'yyyy-MM-dd') : ''}" required/>
+                        </div>
+                    </div>
+
+                    <div id="membershipError" class="alert alert-danger d-none"></div>
+
+                    <div class="mn-membership-tier-grid">
+                        <g:each in="${discountTiers?.reverse()}" var="tier">
+                            <div class="mn-membership-tier" data-min-days="${tier.minDays}">
+                                <span>${tier.label}</span>
+                                <strong>${tier.percentage}%</strong>
+                                <small>خصم مدة</small>
+                            </div>
+                        </g:each>
+                    </div>
+
+                    <button class="mn-btn mn-btn-primary mt-3">متابعة إلى الدفع</button>
+                </div>
+
+                <aside class="mn-form-aside">
+                    <div class="mn-price-box mn-membership-price-box">
+                        <span class="mn-kicker">ملخص السعر</span>
+                        <div class="mn-price-line"><span>عدد الأيام</span><strong id="membershipDays">—</strong></div>
+                        <div class="mn-price-line"><span>السعر لليوم</span><strong><ui:money value="${pricePerDay}"/></strong></div>
+                        <div class="mn-price-line"><span>السعر الأساسي</span><strong id="membershipBase">—</strong></div>
+                        <div class="mn-price-line discount"><span id="membershipDiscountLabel">خصم المدة</span><strong id="membershipDiscount">—</strong></div>
+                        <div class="mn-price-line total"><span>الإجمالي بعد الخصم</span><strong id="membershipTotal">—</strong></div>
+                    </div>
+                </aside>
+            </div>
+        </g:form>
+    </div>
+</section>
+
+<script>
+(function () {
+    const startInput = document.getElementById('membershipStart');
+    const endInput = document.getElementById('membershipEnd');
+    const daysOutput = document.getElementById('membershipDays');
+    const baseOutput = document.getElementById('membershipBase');
+    const discountOutput = document.getElementById('membershipDiscount');
+    const discountLabel = document.getElementById('membershipDiscountLabel');
+    const totalOutput = document.getElementById('membershipTotal');
+    const errorBox = document.getElementById('membershipError');
+    const rate = Number('${pricePerDay ?: 0}');
+
+    // Mirrors MembershipService only for instant preview; server-side pricing stays authoritative.
+    const tiers = [
+        { minDays: 365, percentage: 20, label: 'خصم سنة أو أكثر' },
+        { minDays: 180, percentage: 15, label: 'خصم 6 أشهر أو أكثر' },
+        { minDays: 90, percentage: 10, label: 'خصم 3 أشهر أو أكثر' },
+        { minDays: 30, percentage: 5, label: 'خصم شهر أو أكثر' }
+    ];
+
+    function money(value) {
+        return '$' + Number(value || 0).toFixed(2);
+    }
+
+    function update() {
+        errorBox.classList.add('d-none');
+        document.querySelectorAll('.mn-membership-tier').forEach(function (card) {
+            card.classList.remove('active');
+        });
+
+        if (!startInput.value || !endInput.value) {
+            daysOutput.textContent = '—';
+            baseOutput.textContent = '—';
+            discountOutput.textContent = '—';
+            discountLabel.textContent = 'خصم المدة';
+            totalOutput.textContent = '—';
+            return;
+        }
+
+        const start = new Date(startInput.value + 'T00:00:00');
+        const end = new Date(endInput.value + 'T00:00:00');
+        const days = Math.floor((end - start) / 86400000) + 1;
+
+        if (days < 1) {
+            errorBox.textContent = 'تاريخ النهاية يجب ألا يسبق تاريخ البداية.';
+            errorBox.classList.remove('d-none');
+            daysOutput.textContent = '—';
+            baseOutput.textContent = '—';
+            discountOutput.textContent = '—';
+            totalOutput.textContent = '—';
+            return;
+        }
+
+        const tier = tiers.find(function (item) { return days >= item.minDays; });
+        const percentage = tier ? tier.percentage : 0;
+        const base = days * rate;
+        const discount = base * percentage / 100;
+        const total = base - discount;
+
+        daysOutput.textContent = days + ' يوم';
+        baseOutput.textContent = money(base);
+        discountOutput.textContent = percentage ? '-' + money(discount) + ' (' + percentage + '%)' : money(0);
+        discountLabel.textContent = tier ? tier.label : 'بدون خصم مدة';
+        totalOutput.textContent = money(total);
+
+        if (tier) {
+            const activeCard = document.querySelector('.mn-membership-tier[data-min-days="' + tier.minDays + '"]');
+            if (activeCard) activeCard.classList.add('active');
+        }
+    }
+
+    startInput.addEventListener('change', update);
+    endInput.addEventListener('change', update);
+    update();
+})();
+</script>
+</body>
+</html>

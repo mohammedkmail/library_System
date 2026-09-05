@@ -39,7 +39,7 @@ class HomeController {
             Book.findAllByActive(
                 true,
                 [
-                    max  : 6,
+                    max  : 12,
                     sort : 'dateCreated',
                     order: 'desc'
                 ]
@@ -106,14 +106,14 @@ class HomeController {
                 .findAll { Book book ->
                     book?.active
                 }
-                .take(6)
+                .take(12)
 
-        if (popularBooks.size() < 6) {
+        if (popularBooks.size() < 12) {
 
             featuredBooks.each { Book book ->
 
                 if (
-                    popularBooks.size() < 6 &&
+                    popularBooks.size() < 12 &&
                     !popularBooks*.id.contains(book.id)
                 ) {
                     popularBooks << book
@@ -313,6 +313,7 @@ class HomeController {
 
             membershipPricePerDay      :
                 membershipService.getPricePerDay(),
+            membershipDiscountTiers    : membershipService.getDiscountTiers(),
             upcomingHolidays            : holidayCalendarService.upcomingHolidays(3)
         ]
     }
