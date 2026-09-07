@@ -69,7 +69,7 @@ class DigitalAccessController {
         if (!book) { notFound(); return }
         int days = rentalDays ?: 1
         try {
-            if (!book.digitalAvailable || book.digitalRentalPrice == null) throw new IllegalStateException('الاستئجار الرقمي غير متاح لهذا الكتاب.')
+            if (book.active != true || !book.digitalAvailable || book.digitalRentalPrice == null) throw new IllegalStateException('الاستئجار الرقمي غير متاح لهذا الكتاب.')
             if (days < 1 || days > 30) throw new IllegalArgumentException('مدة الاستئجار من يوم إلى 30 يومًا.')
             if (digitalAccessService.canAccessBook(user, book)) throw new IllegalStateException('لديك وصول فعال لهذا الكتاب بالفعل.')
             BigDecimal amount = digitalAccessService.calculateRentalPrice(book, days)

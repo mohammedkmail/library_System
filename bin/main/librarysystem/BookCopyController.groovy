@@ -7,6 +7,7 @@ import grails.validation.ValidationException
 class BookCopyController {
 
     BookCopyService bookCopyService
+    ReservationService reservationService
 
     static allowedMethods = [
         save  : 'POST',
@@ -18,10 +19,10 @@ class BookCopyController {
     def index(Integer max) {
 
         int pageSize =
-            Math.min(max ?: 20, 100)
+            Math.min(Math.max(max ?: 20, 1), 100)
 
         int offset =
-            params.int('offset') ?: 0
+            Math.max(params.int('offset') ?: 0, 0)
 
         List<BookCopy> bookCopyList =
             bookCopyService.list(
@@ -114,6 +115,8 @@ class BookCopyController {
         bookCopy.status =
             'AVAILABLE'
 
+        Reservation assignedReservation = null
+
         try {
 
             bookCopyService.save(bookCopy)
@@ -135,7 +138,14 @@ class BookCopyController {
             return
         }
 
-        flash.message =
+        try {
+            assignedReservation = reservationService.assignCopy(bookCopy.book, bookCopy)
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            log.warn('تمت إضافة النسخة لكن تعذر تخصيصها تلقائيًا لحجز انتظار.', e)
+        }
+
+        flash.message = assignedReservation ?
+            'تمت إضافة النسخة وتخصيصها تلقائيًا لأقدم حجز بانتظار هذا الكتاب.' :
             'تمت إضافة نسخة الكتاب بنجاح.'
 
         redirect action: 'show',
@@ -194,6 +204,9 @@ class BookCopyController {
             return
         }
 
+
+        String originalStatus = bookCopy.status
+        Long originalBookId = bookCopy.book?.id
 
         boolean history =
             hasHistory(bookCopy)
@@ -288,6 +301,8 @@ class BookCopyController {
         }
 
 
+        Reservation assignedReservation = null
+
         try {
 
             bookCopyService.save(bookCopy)
@@ -303,7 +318,18 @@ class BookCopyController {
             return
         }
 
-        flash.message =
+        boolean becameAvailable = originalStatus != 'AVAILABLE' && bookCopy.status == 'AVAILABLE'
+        boolean movedWhileAvailable = bookCopy.status == 'AVAILABLE' && originalBookId != bookCopy.book?.id
+        if (becameAvailable || movedWhileAvailable) {
+            try {
+                assignedReservation = reservationService.assignCopy(bookCopy.book, bookCopy)
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                log.warn('تم تحديث النسخة لكن تعذر تخصيصها تلقائيًا لحجز انتظار.', e)
+            }
+        }
+
+        flash.message = assignedReservation ?
+            'تم تحديث النسخة وتخصيصها تلقائيًا لأقدم حجز بانتظار هذا الكتاب.' :
             'تم تحديث نسخة الكتاب بنجاح.'
 
         redirect action: 'show',

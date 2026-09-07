@@ -6,11 +6,11 @@ class UiTagLib {
 
     private static final Map<String, String> STATUS_LABELS = [
         'PENDING':'بانتظار الدفع', 'COMPLETED':'مكتمل', 'CANCELLED':'ملغي', 'FAILED':'فشل',
-        'WAITING':'بانتظار نسخة', 'READY':'جاهز للدفع', 'PAID':'مدفوع', 'FULFILLED':'تم التسليم', 'EXPIRED':'منتهي',
-        'WAITING_FOR_COPY':'بانتظار توفر نسخة', 'AWAITING_PAYMENT':'بانتظار الدفع', 'READY_FOR_PICKUP':'جاهز للاستلام',
+        'WAITING':'بانتظار نسخة', 'READY':'جاهز للتأكيد', 'PAID':'مدفوع', 'CONFIRMED':'مؤكد', 'FULFILLED':'تم التسليم', 'EXPIRED':'منتهي',
+        'WAITING_FOR_COPY':'بانتظار توفر نسخة', 'AWAITING_PAYMENT':'بانتظار الدفع', 'AWAITING_CONFIRM':'بانتظار التأكيد', 'READY_FOR_PICKUP':'جاهز للاستلام',
         'PREPARING_DELIVERY':'قيد تجهيز التوصيل', 'OUT_FOR_DELIVERY':'خرج للتوصيل', 'HANDED_OVER':'تم التسليم',
         'PREPARING':'قيد التجهيز', 'DIGITAL_GRANTED':'تم منح الوصول الرقمي',
-        'ACTIVE':'نشط', 'RETURNED':'مُعاد', 'OVERDUE':'متأخر', 'AVAILABLE':'متاح', 'BORROWED':'مُعار',
+        'SCHEDULED':'مجدولة', 'ACTIVE':'نشط', 'RETURNED':'مُعاد', 'OVERDUE':'متأخر', 'AVAILABLE':'متاح', 'BORROWED':'مُعار',
         'RESERVED':'محجوز', 'LOST':'مفقود', 'DAMAGED':'تالف', 'REFUNDED':'مسترد', 'VOIDED':'ملغى ماليًا',
         'OPEN':'مفتوح', 'REVOKED':'مسحوب', 'PICKUP':'استلام من المكتبة', 'DELIVERY':'توصيل', 'DIGITAL':'رقمي',
         'PHYSICAL':'ورقي', 'PURCHASE':'شراء', 'RENTAL':'استئجار', 'ONLINE':'أونلاين', 'COUNTER':'كاونتر',
@@ -28,8 +28,8 @@ class UiTagLib {
         String value = attrs.value?.toString()
         String label = value ? (STATUS_LABELS[value] ?: value) : '—'
         String css = 'mn-status-neutral'
-        if (value in ['COMPLETED','PAID','FULFILLED','ACTIVE','AVAILABLE','DIGITAL_GRANTED','HANDED_OVER']) css = 'mn-status-success'
-        else if (value in ['WAITING','READY','PENDING','AWAITING_PAYMENT','WAITING_FOR_COPY','PREPARING','READY_FOR_PICKUP','PREPARING_DELIVERY','OUT_FOR_DELIVERY','RESERVED','OPEN']) css = 'mn-status-warning'
+        if (value in ['COMPLETED','PAID','CONFIRMED','FULFILLED','ACTIVE','AVAILABLE','DIGITAL_GRANTED','HANDED_OVER']) css = 'mn-status-success'
+        else if (value in ['WAITING','READY','PENDING','SCHEDULED','AWAITING_PAYMENT','AWAITING_CONFIRM','WAITING_FOR_COPY','PREPARING','READY_FOR_PICKUP','PREPARING_DELIVERY','OUT_FOR_DELIVERY','RESERVED','OPEN']) css = 'mn-status-warning'
         else if (value in ['FAILED','CANCELLED','EXPIRED','OVERDUE','LOST','DAMAGED','REVOKED','VOIDED']) css = 'mn-status-danger'
         out << "<span class=\"mn-status ${css}\">${label}</span>"
     }

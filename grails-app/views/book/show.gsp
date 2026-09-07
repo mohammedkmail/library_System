@@ -48,8 +48,17 @@
                     <div><small>القسم</small><b>${book?.category?.name ?: '—'}</b></div>
                 </div>
 
-                <g:if test="${book?.physicalSalePrice != null || book?.digitalPurchasePrice != null || book?.digitalRentalPrice != null}">
+                <g:if test="${physicalCopyCount > 0 || book?.physicalSalePrice != null || book?.digitalPurchasePrice != null || book?.digitalRentalPrice != null}">
                     <div class="mn-price-board">
+                        <g:if test="${physicalCopyCount > 0}">
+                            <div>
+                                <span>استعارة ورقية</span>
+                                <b>
+                                    <g:if test="${hasActiveMembership}">بدون رسوم مع العضوية</g:if>
+                                    <g:else>$<g:formatNumber number="${book.borrowingFee ?: 0}" minFractionDigits="2" maxFractionDigits="2"/> لغير الأعضاء</g:else>
+                                </b>
+                            </div>
+                        </g:if>
                         <g:if test="${book?.physicalSalePrice != null}"><div><span>شراء نسخة ورقية</span><b>$<g:formatNumber number="${book.physicalSalePrice}" minFractionDigits="2" maxFractionDigits="2"/></b></div></g:if>
                         <g:if test="${book?.digitalAvailable && book?.digitalPurchasePrice != null}"><div><span>شراء رقمي دائم</span><b>$<g:formatNumber number="${book.digitalPurchasePrice}" minFractionDigits="2" maxFractionDigits="2"/></b></div></g:if>
                         <g:if test="${book?.digitalAvailable && book?.digitalRentalPrice != null}"><div><span>استئجار رقمي / يوم</span><b>$<g:formatNumber number="${book.digitalRentalPrice}" minFractionDigits="2" maxFractionDigits="2"/></b></div></g:if>
@@ -106,7 +115,7 @@
                         </div>
 
                         <div class="mn-lending-box">
-                            <div><span>الإعارة الورقية</span><h3>احجز نسخة للاستلام من المكتبة</h3></div>
+                            <div><span>الإعارة الورقية</span><h3>احجز نسخة للاستعارة</h3></div>
                             <g:if test="${currentReservation}">
                                 <div class="mn-current-reservation">
                                     <b><ui:label value="${currentReservation.status}"/></b>
@@ -115,7 +124,12 @@
                                 </div>
                             </g:if>
                             <g:elseif test="${physicalCopyCount > 0}">
-                                <p>يمكن لأي مستخدم مسجّل حجز نسخة ورقية. عند تجهيز النسخة تُستكمل رسوم الاستعارة المحددة للكتاب قبل الاستلام.</p>
+                                <g:if test="${hasActiveMembership}">
+                                    <p><strong>ميزة عضويتك فعّالة:</strong> احجز النسخة، وعند تخصيصها لك يتم تأكيد الاستعارة بدون رسوم.</p>
+                                </g:if>
+                                <g:else>
+                                    <p>الحجز يحفظ دورك، وعند تخصيص نسخة تُدفع رسوم الاستعارة لهذا الكتاب. يمكنك تفعيل العضوية لتصبح الاستعارة الورقية بدون رسوم.</p>
+                                </g:else>
                                 <g:form controller="reservation" action="reserve" method="POST"><g:hiddenField name="bookId" value="${book.id}"/><button type="submit" class="mn-solid-action"><i class="bi bi-bookmark-plus"></i> حجز نسخة</button></g:form>
                             </g:elseif>
                             <g:else><p>لا توجد نسخ مخصصة للإعارة لهذا العنوان حاليًا.</p></g:else>

@@ -13,15 +13,17 @@ class MembershipController {
 
     def index() {
         User user = springSecurityService.currentUser as User
+        membershipService.syncMembershipStatuses(isAdmin(user) ? null : user)
         List<Membership> list = isAdmin(user) ? Membership.list(sort: 'startDate', order: 'desc') :
             Membership.findAllByUser(user, [sort: 'startDate', order: 'desc'])
         respond list, model: [isAdmin: isAdmin(user)]
     }
 
     def show(Long id) {
+        User user = springSecurityService.currentUser as User
+        membershipService.syncMembershipStatuses(isAdmin(user) ? null : user)
         Membership membership = membershipService.get(id)
         if (!membership) { notFound(); return }
-        User user = springSecurityService.currentUser as User
         if (!isAdmin(user) && membership.user?.id != user.id) { render status: 403; return }
         Payment payment = Payment.findByPurposeAndTargetIdAndStatus('MEMBERSHIP', membership.id, 'COMPLETED')
         respond membership, model: [isAdmin: isAdmin(user), payment: payment]
@@ -51,7 +53,17 @@ class MembershipController {
         Membership membership = membershipService.get(id)
         if (!membership) { notFound(); return }
         User user = springSecurityService.currentUser as User
-        if (!isAdmin(user) && membership.user?.id != user.id) { render status: 403; return }
+        boolean admin = isAdmin(user)
+        if (!admin && membership.user?.id != user.id) { render status: 403; return }
+
+        Payment completedPayment = Payment.findByPurposeAndTargetIdAndStatus(
+            'MEMBERSHIP', membership.id, 'COMPLETED')
+        if (!admin && completedPayment && membership.status in ['ACTIVE', 'SCHEDULED']) {
+            flash.message = 'العضوية مدفوعة؛ تواصل مع الإدارة إذا احتجت إلغاءها أو معالجة الاسترداد.'
+            redirect action: 'show', id: id
+            return
+        }
+
         membershipService.cancelMembership(id)
         flash.message = 'تم إلغاء العضوية.'
         redirect action: 'index'

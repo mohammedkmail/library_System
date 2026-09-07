@@ -189,8 +189,8 @@
 
                         <g:link controller="reservation" action="index" class="mn-dashboard-metric teal">
                             <span class="mn-dashboard-icon"><i class="bi bi-bag-check"></i></span>
-                            <strong>${paidReservationCount ?: 0}</strong>
-                            <small>مدفوعة وجاهزة للتسليم</small>
+                            <strong>${confirmedReservationCount ?: 0}</strong>
+                            <small>مؤكدة وجاهزة للتسليم</small>
                         </g:link>
 
                         <g:link controller="roomReservation" action="index" class="mn-dashboard-metric blue">
@@ -331,14 +331,14 @@
 
                                     <g:each in="${userReservations.take(Math.min(2, userReservations.size()))}" var="reservation">
                                         <div class="mn-activity-item">
-                                            <span class="mn-activity-symbol ${reservation.status == 'PAID' ? 'green' : 'amber'}">
+                                            <span class="mn-activity-symbol ${reservation.status in ['PAID','CONFIRMED'] ? 'green' : 'amber'}">
                                                 <i class="bi bi-bookmark"></i>
                                             </span>
                                             <div class="mn-activity-copy">
                                                 <strong dir="auto">${reservation.book?.title}</strong>
                                                 <small>
                                                     <ui:label value="${reservation.status}"/>
-                                                    <g:if test="${reservation.status in ['READY','PAID'] && reservation.readyUntil}">
+                                                    <g:if test="${reservation.status in ['READY','PAID','CONFIRMED'] && reservation.readyUntil}">
                                                         <span>•</span>
                                                         حتى <g:formatDate date="${reservation.readyUntil}" format="dd/MM HH:mm"/>
                                                     </g:if>
@@ -508,11 +508,17 @@
                 <div class="mn-membership-banner">
                     <div class="mn-membership-copy">
                         <span>عضوية المنارة</span>
-                        <h2>وصول أوسع للمكتبة الرقمية ومزايا عضوية أكثر مرونة.</h2>
+                        <h2>عضوية واحدة تفتح لك استعارة ورقية بدون رسوم ومكتبة رقمية أوسع.</h2>
                         <p>
                             تبدأ العضوية من <strong>$${membershipPricePerDay} يومياً</strong>،
-                            ويُطبَّق خصم تلقائي كلما زادت مدة الاشتراك.
+                            وكلما طالت مدة الاشتراك زاد التوفير.
                         </p>
+
+                        <div class="mn-home-membership-benefits">
+                            <span><i class="bi bi-bookmark-check"></i> استعارة ورقية بدون رسوم</span>
+                            <span><i class="bi bi-tablet"></i> كتب رقمية مختارة ضمن العضوية</span>
+                            <span><i class="bi bi-stars"></i> خصم يصل إلى 20% على مدة الاشتراك</span>
+                        </div>
 
                         <div class="mn-home-membership-tiers">
                             <g:each in="${membershipDiscountTiers?.reverse()}" var="tier">
@@ -581,8 +587,8 @@
 
                         <div>
                             <i class="bi bi-person-badge"></i>
-                            <strong>عضوية أوفر</strong>
-                            <small>خصومات تلقائية للمدد الأطول حتى 20%.</small>
+                            <strong>عضوية تستاهل</strong>
+                            <small>استعارة ورقية بلا رسوم، كتب رقمية مختارة، وتوفير أكبر للمدد الأطول.</small>
                         </div>
                     </div>
                 </div>
@@ -625,7 +631,7 @@
                         <span class="mn-visit-number">02</span>
                         <i class="bi bi-person-plus"></i>
                         <strong>افتح حسابك</strong>
-                        <small>الحساب يفتح لك الحجز والاستعارة والشراء، والعضوية تضيف مزايا رقمية وخصومات مدة.</small>
+                        <small>الحساب يفتح لك الحجز والشراء، والعضوية تجعل الاستعارة الورقية بدون رسوم وتضيف وصولًا رقميًا أوسع.</small>
                     </g:link>
                 </sec:ifNotLoggedIn>
 

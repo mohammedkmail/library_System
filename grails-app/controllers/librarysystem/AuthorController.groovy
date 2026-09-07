@@ -16,8 +16,8 @@ class AuthorController {
 
     @Secured(['permitAll'])
     def index(Integer max) {
-        int pageSize = Math.min(max ?: 12, 100)
-        int offset = params.int('offset') ?: 0
+        int pageSize = Math.min(Math.max(max ?: 12, 1), 100)
+        int offset = Math.max(params.int('offset') ?: 0, 0)
         boolean admin = isAdmin(springSecurityService.currentUser as User)
         respond Author.list(max: pageSize, offset: offset, sort: 'name', order: 'asc'),
             model: [authorCount: Author.count(), isAdmin: admin]

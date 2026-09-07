@@ -1,8 +1,15 @@
 package librarysystem
 
+import grails.util.Environment
+
 class BootStrap {
 
     def init = { servletContext ->
+
+        // Demo seed data is intentionally disabled in production.
+        if (Environment.current == Environment.PRODUCTION) {
+            return
+        }
 
         User.withTransaction {
 

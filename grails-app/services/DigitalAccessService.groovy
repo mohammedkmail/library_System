@@ -20,14 +20,17 @@ class DigitalAccessService {
     DigitalAccess grantPaidRentalAccess(User user, Book book, Integer rentalDays, BigDecimal paidAmount) {
         if (!user) throw new IllegalArgumentException('المستخدم مطلوب.')
         if (!book) throw new IllegalArgumentException('الكتاب غير موجود.')
-        if (!book.digitalAvailable || book.digitalRentalPrice == null) throw new IllegalStateException('الاستئجار الرقمي غير متاح لهذا الكتاب.')
+        if (book.active != true || !book.digitalAvailable || book.digitalRentalPrice == null) throw new IllegalStateException('الاستئجار الرقمي غير متاح لهذا الكتاب.')
         if (!rentalDays || rentalDays < 1 || rentalDays > 30) throw new IllegalArgumentException('مدة الاستئجار الرقمي من يوم إلى 30 يومًا.')
 
         expireOldRentals()
         if (canAccessBook(user, book)) throw new IllegalStateException('لديك وصول فعال لهذا الكتاب بالفعل.')
 
         Date startDate = new Date()
-        Date endDate = startDate + rentalDays
+        Calendar endCalendar = Calendar.getInstance()
+        endCalendar.time = startDate
+        endCalendar.add(Calendar.DAY_OF_MONTH, rentalDays)
+        Date endDate = endCalendar.time
         new DigitalAccess(
             user: user,
             book: book,
@@ -41,7 +44,7 @@ class DigitalAccessService {
 
     DigitalAccess grantPurchaseAccess(User user, Book book) {
         if (!user) throw new IllegalArgumentException('المستخدم مطلوب.')
-        if (!book || !book.digitalAvailable) throw new IllegalStateException('النسخة الرقمية غير متاحة.')
+        if (!book || book.active != true || !book.digitalAvailable) throw new IllegalStateException('النسخة الرقمية غير متاحة.')
         DigitalAccess existing = DigitalAccess.findByUserAndBookAndAccessType(user, book, 'PURCHASE')
         if (existing) return existing
         new DigitalAccess(
@@ -61,7 +64,7 @@ class DigitalAccessService {
         Date now = new Date()
         if (DigitalAccess.findAllByUserAndBookAndAccessTypeAndStatus(user, book, 'RENTAL', 'ACTIVE')
             .any { it.endDate && it.endDate >= now }) return true
-        book.membershipIncluded && membershipService.hasActiveMembership(user)
+        book.active == true && book.membershipIncluded && membershipService.hasActiveMembership(user)
     }
 
     void expireOldRentals() {

@@ -119,7 +119,7 @@
                     <div>
                         <small>العضوية</small>
                         <strong class="dashboard-text-value">${activeMembership ? 'فعّالة' : 'غير فعّالة'}</strong>
-                        <p><g:if test="${activeMembership}">حتى <g:formatDate date="${activeMembership.endDate}" format="dd/MM/yyyy"/></g:if><g:else>فعّلها لمزايا رقمية وخصومات مدة</g:else></p>
+                        <p><g:if test="${activeMembership}">استعارة بدون رسوم حتى <g:formatDate date="${activeMembership.endDate}" format="dd/MM/yyyy"/></g:if><g:else>فعّلها لاستعارة بدون رسوم ومزايا رقمية</g:else></p>
                     </div>
                     <i class="bi bi-arrow-left mn-dashboard-card-arrow"></i>
                 </g:link>

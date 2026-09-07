@@ -32,12 +32,12 @@ class BookRestController extends RestfulController<Book> {
     def index() {
 
         params.max = Math.min(
-            params.int('max') ?: 10,
+            Math.max(params.int('max') ?: 10, 1),
             100
         )
 
         params.offset =
-            params.int('offset') ?: 0
+            Math.max(params.int('offset') ?: 0, 0)
 
         String search =
             params.search?.trim()
@@ -45,34 +45,15 @@ class BookRestController extends RestfulController<Book> {
         User currentUser = springSecurityService.currentUser as User
         boolean admin = isAdmin(currentUser)
 
-        List<Book> books
-        Long total
+        Map catalogResult = bookService.searchCatalog(
+            search,
+            admin,
+            params.max as int,
+            params.offset as int
+        )
 
-        if (search) {
-            if (admin) {
-                books = bookService.findAllByTitleIlike(
-                    "%${search}%",
-                    [max: params.max, offset: params.offset]
-                )
-                total = bookService.countByTitleIlike("%${search}%")
-            } else {
-                books = Book.findAllByActiveAndTitleIlike(
-                    true,
-                    "%${search}%",
-                    [max: params.max, offset: params.offset]
-                )
-                total = Book.countByActiveAndTitleIlike(true, "%${search}%")
-            }
-        } else if (admin) {
-            books = bookService.list([max: params.max, offset: params.offset])
-            total = bookService.count()
-        } else {
-            books = Book.findAllByActive(
-                true,
-                [max: params.max, offset: params.offset, sort: 'title', order: 'asc']
-            )
-            total = Book.countByActive(true)
-        }
+        List<Book> books = catalogResult.books as List<Book>
+        Long total = catalogResult.total as Long
 
         List<Map> bookData =
             books.collect { Book book ->
@@ -261,7 +242,7 @@ class BookRestController extends RestfulController<Book> {
             return
         }
 
-        bookService.delete(id)
+        bookService.deleteOrDeactivate(id)
 
         render status: NO_CONTENT
     }
@@ -296,6 +277,7 @@ class BookRestController extends RestfulController<Book> {
 
             physicalSaleStock    : book.physicalSaleStock,
             physicalSalePrice    : book.physicalSalePrice,
+            borrowingFee         : book.borrowingFee,
 
             digitalAvailable     : book.digitalAvailable,
             digitalPurchasePrice : book.digitalPurchasePrice,

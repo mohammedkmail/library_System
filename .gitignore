@@ -28,3 +28,6 @@ bin/
 
 # Editor/manual backup snapshots
 *.save
+
+# Windows download metadata
+*:Zone.Identifier

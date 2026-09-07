@@ -58,7 +58,7 @@ class Book {
 
         physicalSaleStock nullable: false, min: 0
         physicalSalePrice nullable: true, min: 0.0
-        borrowingFee nullable: false, min: 0.0
+        borrowingFee nullable: false, min: 0.01
 
         digitalAvailable nullable: false
         digitalPurchasePrice nullable: true, min: 0.0

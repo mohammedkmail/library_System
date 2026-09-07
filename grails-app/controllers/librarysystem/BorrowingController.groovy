@@ -51,7 +51,9 @@ class BorrowingController {
         try {
             Map result = paymentService.recordCounterBorrowing(
                 borrower, copy.id, params.paymentMethod ?: 'CASH', params.notes)
-            flash.message = 'تم تسجيل الدفع والاستعارة المباشرة من الكاونتر.'
+            flash.message = result.payment ?
+                'تم تسجيل الدفع والاستعارة المباشرة من الكاونتر.' :
+                'تم بدء الاستعارة بدون رسوم ضمن مزايا العضوية.'
             redirect action: 'show', id: result.borrowing.id
         } catch (Exception e) {
             flash.message = e.message

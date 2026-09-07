@@ -62,9 +62,28 @@ class PaymentService {
             if (!reservation.assignedCopy || reservation.assignedCopy.status != 'RESERVED') {
                 throw new IllegalStateException('النسخة المخصصة للحجز لم تعد متاحة.')
             }
-            amount = reservation.feeAmount ?: reservation.book?.borrowingFee ?: BigDecimal.ZERO
-            if (amount <= BigDecimal.ZERO) throw new IllegalStateException('لا توجد رسوم على هذا الحجز؛ راجع الإدارة لتأكيد الاستلام.')
-            finalizeOperation = { reservationService.confirmPayment(reservation.id) }
+
+            BigDecimal quotedAmount = reservation.feeAmount ?: BigDecimal.ZERO
+            BigDecimal currentAmount = membershipService.borrowingFeeFor(user, reservation.book)
+
+            if (currentAmount.setScale(2, RoundingMode.HALF_UP) != quotedAmount.setScale(2, RoundingMode.HALF_UP)) {
+                reservation.feeAmount = currentAmount
+                reservation.fulfillmentStatus = currentAmount > BigDecimal.ZERO ?
+                    'AWAITING_PAYMENT' : 'AWAITING_CONFIRM'
+                reservation.save(flush: true, failOnError: true)
+
+                if (currentAmount <= BigDecimal.ZERO) {
+                    throw new IllegalStateException('أصبحت الاستعارة مشمولة بدون رسوم. ارجع إلى الحجز وأكمل التأكيد مباشرة.')
+                }
+                throw new IllegalStateException('تغيّرت رسوم الاستعارة. أعد فتح الحجز لمراجعة السعر الجديد قبل الدفع.')
+            }
+
+            amount = currentAmount
+            if (amount <= BigDecimal.ZERO) {
+                throw new IllegalStateException('هذا الحجز مشمول بدون رسوم. ارجع إلى الحجز وأكمل التأكيد مباشرة.')
+            }
+
+            finalizeOperation = { reservationService.confirmPayment(reservation.id, amount) }
             resolvedTargetId = { reservation.id }
 
         } else if (normalized == 'MEMBERSHIP') {
@@ -72,7 +91,7 @@ class PaymentService {
             validateOwnership(membership?.user, user)
             if (!membership || membership.status != 'PENDING') throw new IllegalStateException('طلب العضوية لم يعد بانتظار الدفع.')
 
-            Map membershipPricing = membershipService.calculatePricing(membership.startDate, membership.endDate)
+            Map membershipPricing = membershipService.validatePendingMembershipForPayment(membership)
             BigDecimal verifiedMembershipPrice = membershipPricing.totalPrice as BigDecimal
             if (membership.price.setScale(2, RoundingMode.HALF_UP) != verifiedMembershipPrice.setScale(2, RoundingMode.HALF_UP)) {
                 throw new IllegalStateException('تغيّر سعر العضوية. أعد فتح طلب العضوية قبل الدفع.')
@@ -112,7 +131,7 @@ class PaymentService {
                 Long bookId = (payload.bookId as Number)?.longValue()
                 Integer rentalDays = (payload.rentalDays as Number)?.intValue()
                 Book lockedBook = Book.lock(bookId)
-                if (!lockedBook) throw new IllegalStateException('الكتاب لم يعد موجودًا.')
+                if (!lockedBook || lockedBook.active != true) throw new IllegalStateException('الكتاب لم يعد متاحًا.')
                 BigDecimal currentAmount = digitalAccessService.calculateRentalPrice(lockedBook, rentalDays)
                 if (currentAmount.setScale(2, RoundingMode.HALF_UP) != amount.setScale(2, RoundingMode.HALF_UP)) {
                     throw new IllegalStateException('تغيّر سعر الاستئجار الرقمي. أعد المحاولة.')
@@ -172,30 +191,43 @@ class PaymentService {
     Map recordCounterBorrowing(User user, Long bookCopyId, String method, String notes = null) {
         BookCopy copy = BookCopy.get(bookCopyId)
         if (!copy) throw new IllegalArgumentException('نسخة الكتاب غير موجودة.')
-        BigDecimal amount = borrowingService.counterBorrowingFee(copy)
-        Borrowing borrowing = borrowingService.borrowBookAfterCounterPayment(user, copy)
-        Payment payment = createCounterPayment(user, 'BORROWING', borrowing.id, amount, method, notes)
+        BigDecimal amount = borrowingService.counterBorrowingFee(user, copy)
+        Borrowing borrowing = borrowingService.borrowBookAtCounter(user, copy)
+        Payment payment = amount > BigDecimal.ZERO ?
+            createCounterPayment(user, 'BORROWING', borrowing.id, amount, method, notes) : null
         [borrowing: borrowing, payment: payment]
     }
 
     Map recordCounterReservationHandover(Long reservationId, String method, String notes = null) {
         reservationService.expireReadyReservations()
-        Reservation reservation = Reservation.lock(reservationId)
+        Reservation reservation = reservationService.refreshReadyReservationFee(reservationId)
         if (!reservation) throw new IllegalArgumentException('الحجز غير موجود.')
+
         if (reservation.status == 'READY') {
-            Payment payment = createCounterPayment(
-                reservation.user, 'BOOK_RESERVATION', reservation.id,
-                reservation.feeAmount ?: reservation.book?.borrowingFee ?: BigDecimal.ZERO,
-                method, notes)
-            reservationService.confirmPayment(reservation.id)
-            Borrowing borrowing = borrowingService.borrowPaidReservation(reservation.id)
+            BigDecimal amount = reservation.feeAmount ?: BigDecimal.ZERO
+            Payment payment = null
+
+            if (amount > BigDecimal.ZERO) {
+                payment = createCounterPayment(
+                    reservation.user, 'BOOK_RESERVATION', reservation.id,
+                    amount, method, notes)
+                reservationService.confirmPayment(reservation.id, amount)
+            } else {
+                reservationService.confirmIncludedBorrowing(reservation.id)
+            }
+
+            Borrowing borrowing = borrowingService.borrowReservation(reservation.id)
             return [borrowing: borrowing, payment: payment]
         }
-        if (reservation.status == 'PAID') {
-            Borrowing borrowing = borrowingService.borrowPaidReservation(reservation.id)
-            Payment payment = Payment.findByPurposeAndTargetIdAndStatus('BOOK_RESERVATION', reservation.id, 'COMPLETED')
+
+        if (reservation.status in ['PAID', 'CONFIRMED']) {
+            boolean wasPaid = reservation.status == 'PAID'
+            Payment payment = wasPaid ?
+                Payment.findByPurposeAndTargetIdAndStatus('BOOK_RESERVATION', reservation.id, 'COMPLETED') : null
+            Borrowing borrowing = borrowingService.borrowReservation(reservation.id)
             return [borrowing: borrowing, payment: payment]
         }
+
         throw new IllegalStateException('الحجز غير جاهز للتسليم.')
     }
 
@@ -228,6 +260,9 @@ class PaymentService {
         } else if (normalized == 'MEMBERSHIP') {
             Membership membership = membershipService.get(targetId)
             validateOwnership(membership?.user, user)
+            if (!membership || membership.status != 'PENDING') {
+                throw new IllegalStateException('يمكن إلغاء طلب العضوية من صفحة الدفع فقط قبل إتمام الدفع.')
+            }
             membershipService.cancelMembership(targetId)
         } else if (normalized in ['ROOM_RESERVATION', 'DIGITAL_RENTAL']) {
             CheckoutIntent intent = checkoutIntentService.findOpen(checkoutToken, user)

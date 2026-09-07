@@ -12,7 +12,7 @@ class Membership {
     static constraints = {
         startDate nullable: false
         endDate nullable: false
-        status nullable: false, blank: false, inList: ['PENDING', 'ACTIVE', 'EXPIRED', 'CANCELLED']
+        status nullable: false, blank: false, inList: ['PENDING', 'SCHEDULED', 'ACTIVE', 'EXPIRED', 'CANCELLED']
         price nullable: false, min: 0.0
         user nullable: false
     }

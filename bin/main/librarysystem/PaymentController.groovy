@@ -121,6 +121,8 @@ class PaymentController {
             reservationService.expireReadyReservations()
             Reservation reservation = reservationService.get(targetId)
             if (!reservation || reservation.user?.id != user?.id || reservation.status != 'READY') return null
+            reservation = reservationService.refreshReadyReservationFee(targetId)
+            if ((reservation.feeAmount ?: BigDecimal.ZERO) <= BigDecimal.ZERO) return null
             return [
                 amount: reservation.feeAmount,
                 targetTitle: reservation.book?.title,
@@ -135,6 +137,11 @@ class PaymentController {
         if (normalized == 'MEMBERSHIP') {
             Membership membership = membershipService.get(targetId)
             if (!membership || membership.user?.id != user?.id || membership.status != 'PENDING') return null
+            try {
+                membershipService.validatePendingMembershipForPayment(membership)
+            } catch (IllegalArgumentException | IllegalStateException ignored) {
+                return null
+            }
             return [
                 amount: membership.price,
                 targetTitle: 'عضوية المنارة',

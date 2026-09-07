@@ -11146,3 +11146,155 @@ body.manara-site .mn-books-catalog .mn-library-book-card:hover .mn-library-cover
         display: none;
     }
 }
+
+/* =========================================================
+   Membership value cards — final business model
+   ========================================================= */
+.mn-membership-benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0 0 1.35rem;
+}
+
+.mn-membership-benefit-card {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: .9rem;
+    min-height: 168px;
+    padding: 1.15rem;
+    overflow: hidden;
+    border: 1px solid rgba(27, 104, 90, .12);
+    border-radius: 20px;
+    background: linear-gradient(145deg, #ffffff, #f7fbf9);
+    box-shadow: 0 12px 32px rgba(27, 75, 66, .06);
+    transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+
+.mn-membership-benefit-card::after {
+    content: '';
+    position: absolute;
+    width: 90px;
+    height: 90px;
+    inset-inline-end: -34px;
+    bottom: -40px;
+    border-radius: 50%;
+    background: rgba(193, 147, 65, .10);
+}
+
+.mn-membership-benefit-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(27, 104, 90, .28);
+    box-shadow: 0 18px 42px rgba(27, 75, 66, .11);
+}
+
+.mn-membership-benefit-card.primary {
+    background: linear-gradient(145deg, #f4fbf8, #ffffff 65%);
+}
+
+.mn-membership-benefit-icon {
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border-radius: 15px;
+    background: #176f61;
+    color: #fff;
+    font-size: 1.15rem;
+    box-shadow: 0 8px 20px rgba(23, 111, 97, .18);
+}
+
+.mn-membership-benefit-card small,
+.mn-membership-benefit-card strong,
+.mn-membership-benefit-card p {
+    display: block;
+}
+
+.mn-membership-benefit-card small {
+    color: #b48334;
+    font-size: .72rem;
+    font-weight: 800;
+}
+
+.mn-membership-benefit-card strong {
+    margin-top: .2rem;
+    color: #173d35;
+    font-size: .98rem;
+    line-height: 1.55;
+}
+
+.mn-membership-benefit-card p {
+    margin: .45rem 0 0;
+    color: #6a7974;
+    font-size: .78rem;
+    line-height: 1.75;
+}
+
+.mn-membership-benefit-list {
+    margin: .85rem 0 0;
+    padding: 0 1.15rem 0 0;
+    color: #566963;
+    font-size: .82rem;
+    line-height: 1.9;
+}
+
+.mn-membership-benefit-list li::marker {
+    color: #176f61;
+}
+
+.mn-home-membership-benefits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .55rem;
+    margin: 1rem 0 .9rem;
+}
+
+.mn-home-membership-benefits span {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .55rem .7rem;
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .07);
+    color: rgba(255, 255, 255, .9);
+    font-size: .72rem;
+    font-weight: 700;
+    transition: transform .22s ease, background .22s ease;
+}
+
+.mn-home-membership-benefits span:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, .12);
+}
+
+.mn-home-membership-benefits i {
+    color: #f2cb82;
+}
+
+@media (max-width: 991.98px) {
+    .mn-membership-benefits-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mn-membership-benefit-card {
+        min-height: 0;
+    }
+}
+
+.mn-membership-fine-print {
+    margin: -0.2rem 0 1.15rem;
+    padding: 0.75rem 0.95rem;
+    border: 1px dashed rgba(13, 88, 73, 0.24);
+    border-radius: 14px;
+    background: rgba(13, 88, 73, 0.04);
+    color: #5f6f69;
+    font-size: 0.88rem;
+}
+
+.mn-membership-fine-print i {
+    margin-left: 0.35rem;
+    color: var(--mn-primary, #0d5849);
+}

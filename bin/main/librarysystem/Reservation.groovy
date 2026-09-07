@@ -23,6 +23,7 @@ class Reservation {
             'WAITING',
             'READY',
             'PAID',
+            'CONFIRMED',
             'FULFILLED',
             'EXPIRED',
             'CANCELLED'
@@ -33,6 +34,7 @@ class Reservation {
         fulfillmentStatus nullable: false, blank: false, inList: [
             'WAITING_FOR_COPY',
             'AWAITING_PAYMENT',
+            'AWAITING_CONFIRM',
             'READY_FOR_PICKUP',
             'PREPARING_DELIVERY',
             'OUT_FOR_DELIVERY',

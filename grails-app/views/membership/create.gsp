@@ -11,10 +11,38 @@
             <div>
                 <span class="mn-kicker">عضوية المنارة</span>
                 <h1>اختر فترة العضوية</h1>
-                <p>كلما طالت مدة الاشتراك حصلت على خصم أكبر. السعر النهائي يُعاد حسابه والتحقق منه على الخادم قبل الدفع.</p>
+                <p>فعّل عضويتك لتستعير الكتب الورقية بدون رسوم، وتفتح محتوى رقميًا مختارًا، وتوفّر أكثر مع المدد الأطول.</p>
             </div>
             <g:link action="index" class="mn-btn mn-btn-light">عضوياتي</g:link>
         </div>
+
+        <div class="mn-membership-benefits-grid">
+            <div class="mn-membership-benefit-card primary">
+                <span class="mn-membership-benefit-icon"><i class="bi bi-book-half"></i></span>
+                <div>
+                    <small>خلّي كتبك أقرب</small>
+                    <strong>استعارة ورقية بلا رسوم</strong>
+                    <p>طوال فترة عضويتك الفعالة، أي كتاب ورقي متاح للاستعارة يمكنك أخذه بدون رسوم إعارة إضافية.</p>
+                </div>
+            </div>
+            <div class="mn-membership-benefit-card">
+                <span class="mn-membership-benefit-icon"><i class="bi bi-tablet"></i></span>
+                <div>
+                    <small>مكتبتك تروح معك</small>
+                    <strong>رف رقمي يرافقك</strong>
+                    <p>افتح مجموعة مختارة من الكتب الرقمية مباشرة من حسابك طوال فترة الاشتراك.</p>
+                </div>
+            </div>
+            <div class="mn-membership-benefit-card">
+                <span class="mn-membership-benefit-icon"><i class="bi bi-graph-down-arrow"></i></span>
+                <div>
+                    <small>وفّر كلما كملت</small>
+                    <strong>خصومات تصاعدية حتى 20%</strong>
+                    <p>اختر اشتراكًا أطول وخذ سعرًا أفضل تلقائيًا، مع حساب واضح قبل الانتقال للدفع.</p>
+                </div>
+            </div>
+        </div>
+        <p class="mn-membership-fine-print"><i class="bi bi-info-circle"></i> الاستعارة المجانية تشمل رسوم الإعارة الأساسية فقط؛ رسوم التأخير عند تجاوز موعد الإرجاع تبقى منفصلة.</p>
 
         <g:form action="save" method="POST">
             <div class="mn-form-shell mn-membership-pricing-shell">
@@ -101,8 +129,8 @@
             return;
         }
 
-        const start = new Date(startInput.value + 'T00:00:00');
-        const end = new Date(endInput.value + 'T00:00:00');
+        const start = Date.parse(startInput.value + 'T00:00:00Z');
+        const end = Date.parse(endInput.value + 'T00:00:00Z');
         const days = Math.floor((end - start) / 86400000) + 1;
 
         if (days < 1) {

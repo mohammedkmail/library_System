@@ -27,10 +27,10 @@ class BookController {
     def index(Integer max) {
 
         int pageSize =
-            Math.min(max ?: 12, 100)
+            Math.min(Math.max(max ?: 12, 1), 100)
 
         int offset =
-            params.int('offset') ?: 0
+            Math.max(params.int('offset') ?: 0, 0)
 
         String search =
             params.search?.trim()
@@ -41,73 +41,15 @@ class BookController {
         boolean admin =
             isAdmin(currentUser)
 
-        List<Book> bookList
-        Long bookCount
+        Map catalogResult = bookService.searchCatalog(
+            search,
+            admin,
+            pageSize,
+            offset
+        )
 
-
-        if (search) {
-
-            String searchPattern =
-                "%${search.toLowerCase()}%"
-
-            String visibilityClause =
-                admin ? '' : 'b.active = true and '
-
-            String fromWhere = """
-                from Book b
-                where ${visibilityClause}(
-                    lower(b.title) like :search or
-                    lower(b.isbn) like :search or
-                    lower(b.author.name) like :search or
-                    lower(b.category.name) like :search
-                )
-            """
-
-            bookList =
-                Book.executeQuery(
-                    "${fromWhere} order by b.title asc",
-                    [search: searchPattern],
-                    [
-                        max   : pageSize,
-                        offset: offset
-                    ]
-                )
-
-            bookCount =
-                Book.executeQuery(
-                    "select count(b.id) ${fromWhere}",
-                    [search: searchPattern]
-                )[0] as Long
-
-        } else if (admin) {
-
-            bookList =
-                Book.list(
-                    max: pageSize,
-                    offset: offset,
-                    sort: 'title',
-                    order: 'asc'
-                )
-
-            bookCount =
-                Book.count()
-
-        } else {
-
-            bookList =
-                Book.findAllByActive(
-                    true,
-                    [
-                        max   : pageSize,
-                        offset: offset,
-                        sort  : 'title',
-                        order : 'asc'
-                    ]
-                )
-
-            bookCount =
-                Book.countByActive(true)
-        }
+        List<Book> bookList = catalogResult.books as List<Book>
+        Long bookCount = catalogResult.total as Long
 
 
         respond bookList,
@@ -194,7 +136,8 @@ class BookController {
                     reservation.status in [
                         'WAITING',
                         'READY',
-                        'PAID'
+                        'PAID',
+                        'CONFIRMED'
                     ]
                 }
 
@@ -486,55 +429,23 @@ class BookController {
 
     @Secured(['ROLE_ADMIN'])
     def delete(Long id) {
+        Map result
+        try {
+            result = bookService.deleteOrDeactivate(id)
+        } catch (ValidationException | IllegalArgumentException e) {
+            flash.message = e.message ?: 'تعذر حذف أو تعطيل الكتاب.'
+            redirect action: 'show', id: id
+            return
+        }
 
-        Book book =
-            bookService.get(id)
-
-        if (!book) {
+        if (!result.found) {
             notFound()
             return
         }
 
-
-        boolean hasSystemHistory =
-            BookCopy.countByBook(book) > 0 ||
-            Reservation.countByBook(book) > 0 ||
-            Purchase.countByBook(book) > 0 ||
-            DigitalAccess.countByBook(book) > 0
-
-
-        if (hasSystemHistory) {
-
-            try {
-
-                book.active = false
-
-                bookService.save(book)
-
-
-                flash.message =
-                    'للكتاب سجل عمليات سابق، لذلك تم تعطيله بدل حذفه نهائيًا.'
-
-            } catch (ValidationException | IllegalArgumentException e) {
-
-                flash.message =
-                    'تعذر تعطيل الكتاب.'
-
-
-                redirect action: 'show',
-                         id: book.id
-
-                return
-            }
-
-        } else {
-
-            bookService.delete(id)
-
-            flash.message =
-                'تم حذف الكتاب بنجاح.'
-        }
-
+        flash.message = result.deleted ?
+            'تم حذف الكتاب بنجاح.' :
+            'للكتاب سجل عمليات سابق، لذلك تم تعطيله بدل حذفه نهائيًا.'
 
         redirect action: 'index'
     }

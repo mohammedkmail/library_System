@@ -165,7 +165,8 @@ class HomeController {
                     reservation.status in [
                         'WAITING',
                         'READY',
-                        'PAID'
+                        'PAID',
+                        'CONFIRMED'
                     ]
 
                 }.take(4)
@@ -187,18 +188,12 @@ class HomeController {
                 }.take(3)
 
 
-            hasActiveMembership =
+            currentMembership =
                 membershipService
-                    .hasActiveMembership(currentUser)
+                    .currentActiveMembership(currentUser)
 
-            if (hasActiveMembership) {
-
-                currentMembership =
-                    Membership.findByUserAndStatus(
-                        currentUser,
-                        'ACTIVE'
-                    )
-            }
+            hasActiveMembership =
+                currentMembership != null
         }
 
 
@@ -209,7 +204,7 @@ class HomeController {
         Long activeBorrowingCount = 0L
         Long overdueBorrowingCount = 0L
         Long waitingReservationCount = 0L
-        Long paidReservationCount = 0L
+        Long confirmedReservationCount = 0L
         Long confirmedRoomReservationCount = 0L
 
         List<Borrowing> urgentBorrowings = []
@@ -251,8 +246,8 @@ class HomeController {
                 Reservation.countByStatus('WAITING')
 
 
-            paidReservationCount =
-                Reservation.countByStatus('PAID')
+            confirmedReservationCount =
+                Reservation.countByStatusInList(['PAID', 'CONFIRMED'])
 
 
             confirmedRoomReservationCount =
@@ -307,7 +302,7 @@ class HomeController {
             activeBorrowingCount       : activeBorrowingCount,
             overdueBorrowingCount      : overdueBorrowingCount,
             waitingReservationCount    : waitingReservationCount,
-            paidReservationCount       : paidReservationCount,
+            confirmedReservationCount  : confirmedReservationCount,
             confirmedRoomReservationCount: confirmedRoomReservationCount,
             urgentBorrowings           : urgentBorrowings,
 

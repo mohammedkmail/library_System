@@ -37,8 +37,22 @@ class DashboardController {
         List<Purchase> purchases = Purchase.findAllByUser(currentUser)
         List<RoomReservation> roomReservations = RoomReservation.findAllByUser(currentUser)
 
-        Membership activeMembership = membershipService.hasActiveMembership(currentUser) ?
-            Membership.findByUserAndStatus(currentUser, 'ACTIVE') : null
+        Membership activeMembership = membershipService.currentActiveMembership(currentUser)
+
+        Set<Long> digitalBookIds = DigitalAccess.findAllByUser(currentUser)
+            .findAll { DigitalAccess access ->
+                access.status == 'ACTIVE' && (!access.endDate || access.endDate.after(now)) && access.book
+            }
+            .collect { DigitalAccess access -> access.book.id as Long }
+            .toSet()
+
+        if (activeMembership) {
+            digitalBookIds.addAll(
+                Book.findAllByMembershipIncludedAndDigitalAvailableAndActive(
+                    true, true, true
+                )*.id.collect { it as Long }
+            )
+        }
 
         render view: 'index', model: [
             isAdmin                  : false,
@@ -47,14 +61,12 @@ class DashboardController {
             overdueBorrowings        : borrowings.count {
                 it.status == 'OVERDUE' || (it.status == 'ACTIVE' && it.dueDate && it.dueDate.before(now))
             } as Long,
-            activeReservations       : reservations.count { it.status in ['WAITING', 'READY', 'PAID'] } as Long,
+            activeReservations       : reservations.count { it.status in ['WAITING', 'READY', 'PAID', 'CONFIRMED'] } as Long,
             completedPurchases       : purchases.count { it.status == 'COMPLETED' } as Long,
             confirmedRoomReservations: roomReservations.count {
                 it.status == 'CONFIRMED' && it.endTime && it.endTime.after(now)
             } as Long,
-            digitalAccessCount       : DigitalAccess.findAllByUser(currentUser).count {
-                it.status == 'ACTIVE' && (!it.endDate || it.endDate.after(now))
-            } as Long,
+            digitalAccessCount       : digitalBookIds.size() as Long,
             activeMembership         : activeMembership
         ]
     }

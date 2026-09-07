@@ -10,6 +10,7 @@ class ReservationController {
     ReservationService reservationService
     BorrowingService borrowingService
     PaymentService paymentService
+    MembershipService membershipService
 
     static allowedMethods = [reserve: 'POST', cancel: 'POST', assignCopy: 'POST', checkout: 'POST',
                              handover: 'POST', outForDelivery: 'POST']
@@ -30,10 +31,19 @@ class ReservationController {
         User currentUser = springSecurityService.currentUser as User
         boolean admin = isAdmin(currentUser)
         if (!admin && reservation.user?.id != currentUser.id) { render status: 403; return }
+        if (reservation.status == 'READY') {
+            reservation = reservationService.refreshReadyReservationFee(reservation.id)
+        }
         List<BookCopy> available = admin && reservation.status == 'WAITING' ?
             BookCopy.findAllByBookAndStatus(reservation.book, 'AVAILABLE', [sort: 'copyCode', order: 'asc']) : []
         Payment payment = Payment.findByPurposeAndTargetIdAndStatus('BOOK_RESERVATION', reservation.id, 'COMPLETED')
-        respond reservation, model: [isAdmin: admin, availableCopyList: available, payment: payment]
+        boolean activeMembership = membershipService.hasActiveMembership(reservation.user)
+        respond reservation, model: [
+            isAdmin: admin,
+            availableCopyList: available,
+            payment: payment,
+            hasActiveMembership: activeMembership
+        ]
     }
 
     @Secured(['ROLE_USER'])
@@ -43,9 +53,13 @@ class ReservationController {
         if (!book) { flash.message = 'الكتاب غير موجود.'; redirect controller: 'book', action: 'index'; return }
         try {
             Reservation reservation = reservationService.createReservation(user, book)
-            flash.message = reservation.status == 'READY' ?
-                'تم حفظ نسخة لك مباشرة. أكمل الدفع لتثبيت الاستعارة.' :
-                'أضيف طلبك إلى قائمة الانتظار. عند توفر نسخة ستظهر لك إمكانية الدفع والتأكيد.'
+            if (reservation.status == 'READY') {
+                flash.message = reservation.feeAmount > BigDecimal.ZERO ?
+                    'تم حفظ نسخة لك مباشرة. أكمل رسوم الاستعارة لتثبيت الحجز.' :
+                    'تم حفظ نسخة لك مباشرة. عضويتك الفعالة تشمل الاستعارة بدون رسوم؛ أكمل التأكيد.'
+            } else {
+                flash.message = 'أضيف طلبك إلى قائمة الانتظار. عند توفر نسخة ستظهر لك خطوة التأكيد المناسبة.'
+            }
             redirect action: 'show', id: reservation.id
         } catch (Exception e) {
             flash.message = e.message
@@ -59,7 +73,16 @@ class ReservationController {
         User user = springSecurityService.currentUser as User
         if (!reservation || reservation.user?.id != user.id) { render status: 403; return }
         try {
-            reservationService.updateFulfillmentPreference(id, params.fulfillmentMethod, params.deliveryAddress)
+            Reservation updated = reservationService.updateFulfillmentPreference(
+                id, params.fulfillmentMethod, params.deliveryAddress)
+
+            if ((updated.feeAmount ?: BigDecimal.ZERO) <= BigDecimal.ZERO) {
+                reservationService.confirmIncludedBorrowing(id)
+                flash.message = 'تم تأكيد الحجز بدون رسوم ضمن مزايا العضوية.'
+                redirect action: 'show', id: id
+                return
+            }
+
             redirect controller: 'payment', action: 'checkout', params: [purpose: 'BOOK_RESERVATION', targetId: id]
         } catch (Exception e) {
             flash.message = e.message
@@ -87,7 +110,9 @@ class ReservationController {
     def assignCopy(Long id, Long bookCopyId) {
         try {
             Reservation reservation = reservationService.assignCopyToReservation(id, bookCopyId)
-            flash.message = 'تم تخصيص النسخة. الحجز الآن جاهز للدفع والاستلام.'
+            flash.message = reservation.feeAmount > BigDecimal.ZERO ?
+                'تم تخصيص النسخة. الحجز الآن جاهز لإكمال الرسوم.' :
+                'تم تخصيص النسخة. الاستعارة مشمولة بدون رسوم ويمكن للمستخدم تأكيدها.'
             redirect action: 'show', id: reservation.id
         } catch (Exception e) {
             flash.message = e.message
@@ -109,10 +134,11 @@ class ReservationController {
         try {
             Map result
             Reservation reservation = reservationService.get(id)
-            if (reservation?.status == 'PAID') {
-                result = [borrowing: borrowingService.borrowPaidReservation(id)]
+            if (reservation?.status in ['PAID', 'CONFIRMED']) {
+                result = [borrowing: borrowingService.borrowReservation(id)]
             } else {
-                result = paymentService.recordCounterReservationHandover(id, params.paymentMethod ?: 'CASH', params.notes)
+                result = paymentService.recordCounterReservationHandover(
+                    id, params.paymentMethod ?: 'CASH', params.notes)
             }
             flash.message = 'تم تسليم الكتاب وبدأت مدة الاستعارة.'
             redirect controller: 'borrowing', action: 'show', id: result.borrowing.id

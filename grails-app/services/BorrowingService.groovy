@@ -6,25 +6,35 @@ import grails.gorm.transactions.Transactional
 class BorrowingService {
 
     ReservationService reservationService
+    MembershipService membershipService
 
     Borrowing get(Serializable id) { Borrowing.get(id) }
     List<Borrowing> list(Map params = [:]) { Borrowing.list(params) }
     Long count() { Borrowing.count() }
 
-    Borrowing borrowBookAfterCounterPayment(User user, BookCopy bookCopy) {
+    Borrowing borrowBookAtCounter(User user, BookCopy bookCopy) {
         validateBorrower(user)
         if (!bookCopy) throw new IllegalArgumentException('اختر نسخة كتاب.')
         BookCopy lockedCopy = BookCopy.lock(bookCopy.id)
         if (lockedCopy.status != 'AVAILABLE') throw new IllegalStateException('هذه النسخة لم تعد متاحة.')
+
+        Reservation waitingReservation = Reservation.findByBookAndStatus(
+            lockedCopy.book, 'WAITING', [sort: 'reservationDate', order: 'asc'])
+        if (waitingReservation) {
+            throw new IllegalStateException('يوجد حجز أقدم بانتظار نسخة من هذا الكتاب. سلّم النسخة حسب ترتيب الحجوزات أولًا.')
+        }
+
         ensureCopyIsNotBorrowed(lockedCopy)
         createBorrowing(user, lockedCopy, 'COUNTER', 'PICKUP')
     }
 
-    Borrowing borrowPaidReservation(Long reservationId) {
+    Borrowing borrowReservation(Long reservationId) {
         reservationService.expireReadyReservations()
         Reservation reservation = reservationService.get(reservationId)
         if (!reservation) throw new IllegalArgumentException('الحجز غير موجود.')
-        if (reservation.status != 'PAID') throw new IllegalStateException('يجب أن يكون الحجز مدفوعًا قبل تسليم الكتاب.')
+        if (!(reservation.status in ['PAID', 'CONFIRMED'])) {
+            throw new IllegalStateException('يجب تأكيد الحجز أو دفع رسومه قبل تسليم الكتاب.')
+        }
         if (!reservation.assignedCopy) throw new IllegalStateException('لا توجد نسخة مخصصة لهذا الحجز.')
 
         User user = reservation.user
@@ -43,7 +53,9 @@ class BorrowingService {
     Borrowing returnBook(Long id) {
         Borrowing borrowing = Borrowing.get(id)
         if (!borrowing) return null
-        if (!(borrowing.status in ['ACTIVE', 'OVERDUE'])) throw new IllegalStateException('هذه الاستعارة مغلقة بالفعل.')
+        if (!(borrowing.status in ['ACTIVE', 'OVERDUE'])) {
+            throw new IllegalStateException('هذه الاستعارة مغلقة بالفعل.')
+        }
 
         Date returnDate = new Date()
         borrowing.returnDate = returnDate
@@ -78,8 +90,8 @@ class BorrowingService {
     Long countActiveBorrowings() { updateOverdueBorrowings(); Borrowing.countByStatus('ACTIVE') }
     Long countOverdueBorrowings() { updateOverdueBorrowings(); Borrowing.countByStatus('OVERDUE') }
 
-    BigDecimal counterBorrowingFee(BookCopy bookCopy) {
-        bookCopy?.book?.borrowingFee ?: BigDecimal.ZERO
+    BigDecimal counterBorrowingFee(User user, BookCopy bookCopy) {
+        membershipService.borrowingFeeFor(user, bookCopy?.book)
     }
 
     private Borrowing createBorrowing(User user, BookCopy bookCopy, String origin, String fulfillmentMethod) {

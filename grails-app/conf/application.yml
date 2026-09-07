@@ -214,7 +214,7 @@ grails:
                       access: ['permitAll']
 
                     - pattern: /shutdown
-                      access: ['permitAll']
+                      access: ['ROLE_ADMIN']
 
                     - pattern: /assets/**
                       access: ['permitAll']

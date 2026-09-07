@@ -1,23 +1,62 @@
-# Final UBS Review Notes
+# Final UBS Review Notes — Current Logic Review
 
-This review intentionally avoided changing the stable integrations that were already working: Braintree Hosted Fields / gateway service, Google Books + Open Library ISBN lookup, HolidayCalendarService, and the study-room reservation/discount flow.
+This review is based only on the latest project archive `library_System-main (4).zip`.
 
-## Changes made
+## Final business model
 
-- Home popular-books section now loads up to 12 active books so the horizontal arrows have real content to move through; arrows are hidden when there are 6 books or fewer.
-- Home book action buttons now have readable white text on the dark teal background.
-- Home hero statistic shortcuts, the "كل ما تحتاجه من مكتبتك" panel, and the three "استخدم المكتبة بطريقتك" cards have richer hover/motion treatment.
-- Book catalog cards now lift/zoom subtly on hover; the catalog search input is forced to RTL alignment.
-- Navbar account control is wider to accommodate an e-mail username.
-- Dashboard is role-aware: admins see system-wide operational KPIs; users see only personal borrowing/reservation/purchase/digital/membership data.
-- Physical borrowing is no longer blocked by membership. Any enabled, non-locked registered ROLE_USER can reserve/borrow; book borrowing fees and the existing payment/handover lifecycle remain in place.
-- Membership remains a premium/digital benefit and now has duration discounts: 30+ days 5%, 90+ days 10%, 180+ days 15%, 365+ days 20%.
-- Membership pricing is calculated server-side and re-verified in PaymentService immediately before the Braintree transaction amount is used.
-- REST book visibility now matches the browser catalog: normal users do not receive inactive books; admins can still see them.
-- Removed generated integration-test placeholders that contained intentional `assert false` statements; the real `CoreServicesSpec` remains.
-- `.gitignore` now ignores `*.save` manual backup snapshots.
+- Browsing the library/catalog is free.
+- A registered enabled user can reserve/borrow a physical book.
+- Non-member: pays the book's configured `borrowingFee`.
+- Active member: physical borrowing fee is `0`.
+- Late fees remain separate and still apply after the due date.
+- Private study rooms remain a separate paid service.
+- Membership also includes selected digital books and duration-based subscription discounts.
 
-## Protected integrations confirmed unchanged
+## Membership rules
+
+- 30+ days: 5%
+- 90+ days: 10%
+- 180+ days: 15%
+- 365+ days: 20%
+- Starts today after payment -> `ACTIVE`.
+- Starts in the future after payment -> `SCHEDULED`.
+- Expired memberships -> `EXPIRED`.
+- Scheduled memberships do not grant benefits before their start date.
+- Overlapping active/scheduled membership periods are rejected before checkout and rechecked when payment finalizes.
+
+## Physical reservation / borrowing flow
+
+```text
+WAITING -> READY -> PAID      -> FULFILLED   (non-member / borrowing fee paid)
+                 -> CONFIRMED -> FULFILLED   (active member / no borrowing fee)
+```
+
+- `READY` fees are recalculated from current membership state before confirmation/payment.
+- A zero-fee membership reservation does not create a fake Braintree transaction.
+- Counter borrowing also creates no borrowing Payment when the active member's fee is zero.
+- Book-copy assignment locks the copy before marking it `RESERVED` to reduce concurrent double-allocation risk.
+- Available copies are allocated to the oldest `WAITING` reservation first, and direct counter borrowing cannot bypass an older waiting reservation.
+
+## Search and API consistency
+
+- Fixed `/book/index?search=...` Hibernate 500 caused by passing a GString-like HQL expression; the query is now built as a normal `String` with named parameters.
+- Book catalog pagination clamps invalid max/offset values.
+- REST book visibility follows browser rules: normal users cannot see inactive books, admins can.
+- Book delete/archive business logic is centralized in `BookService`: books with operational history are deactivated rather than physically deleted, including through REST.
+
+## Other logic fixes
+
+- Replaced incompatible `Date + Integer` arithmetic in digital rental expiry with `Calendar`.
+- Inactive/archived books cannot start new digital rentals or receive membership-included access; existing purchased/rental ownership remains readable.
+- User dashboard digital count now includes membership-included digital books, not only explicit DigitalAccess rows.
+- Payment-page membership cancellation cannot be abused to cancel an already-paid active/scheduled membership.
+- Demo seed accounts are disabled in production.
+- `/shutdown` is no longer public; it requires admin access.
+- Removed stale `.save` generated backup test file from the final package.
+
+## Stable integrations intentionally preserved
+
+No functional rewrite was made to these working integrations:
 
 - `grails-app/services/BraintreeGatewayService.groovy`
 - `grails-app/services/BookMetadataService.groovy`
@@ -26,33 +65,24 @@ This review intentionally avoided changing the stable integrations that were alr
 - `grails-app/controllers/librarysystem/RoomReservationController.groovy`
 - `grails-app/views/payment/checkout.gsp`
 
-## Static checks completed here
+The existing Braintree / Google Books + Open Library / holiday-calendar / study-room flow remains the base implementation.
 
-- `node --check grails-app/assets/javascripts/application.js` — PASS
-- CSS opening/closing brace count — PASS
-- Changed GSP security/conditional tag counts — balanced
-- No generated `assert false` / TODO placeholder tests remain under `src/`
+## Verification
 
-A full Gradle run could not be executed in the review container because the Gradle 8.14.3 distribution was not cached and the container has no internet access.
+An integration spec `MembershipBorrowingFlowSpec` covers:
 
-## Run these on the project machine before the UBS demo
+- active-member zero borrowing fee vs non-member fee;
+- `READY -> CONFIRMED -> FULFILLED` member flow;
+- future membership stays `SCHEDULED` and grants no early benefit;
+- digital-rental expiry works without `Date.plus(Integer)`;
+- numeric/text catalog search uses the corrected shared query;
+- FIFO reservation allocation gives an available copy to the oldest waiting request.
+
+Run on the project machine before the demo:
 
 ```bash
-cd ~/training/LibrarySystem
 chmod +x gradlew
 ./gradlew clean test
 ./gradlew integrationTest
 ./gradlew bootRun
 ```
-
-Then smoke-test this exact flow:
-
-1. Public home: test book arrows, hero shortcut hover, membership panel, and visit cards.
-2. Login as ROLE_USER: dashboard must show only personal data.
-3. Open a physical book without active membership: reserve it successfully.
-4. Open Membership → create: verify 30/90/180/365-day discount previews and checkout amount.
-5. Braintree Sandbox: run one known-good payment path.
-6. ISBN lookup: verify Google Books / Open Library suggestion still works.
-7. Calendar / study-room reservation: verify holiday blocking and existing room discounts still work.
-8. Login as ROLE_ADMIN: dashboard must show system-wide KPIs and admin links.
-9. Postman: GET `/api/books`; verify inactive books are hidden for ROLE_USER and visible for ROLE_ADMIN.
