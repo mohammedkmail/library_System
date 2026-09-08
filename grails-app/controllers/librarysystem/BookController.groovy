@@ -41,15 +41,19 @@ class BookController {
         boolean admin =
             isAdmin(currentUser)
 
-        Map catalogResult = bookService.searchCatalog(
-            search,
-            admin,
-            pageSize,
-            offset
-        )
+        Map catalogResult =
+            bookService.searchCatalog(
+                search,
+                admin,
+                pageSize,
+                offset
+            )
 
-        List<Book> bookList = catalogResult.books as List<Book>
-        Long bookCount = catalogResult.total as Long
+        List<Book> bookList =
+            catalogResult.books as List<Book>
+
+        Long bookCount =
+            catalogResult.total as Long
 
 
         respond bookList,
@@ -57,6 +61,63 @@ class BookController {
                 bookCount: bookCount,
                 search   : search,
                 pageSize : pageSize,
+                isAdmin  : admin
+            ]
+    }
+
+
+    /*
+     * =========================================================
+     * LIVE SEARCH
+     *
+     * Used by JavaScript while the user is typing.
+     *
+     * It uses the SAME BookService search used by index(),
+     * so title / ISBN / author / category searching stays
+     * in one place.
+     * =========================================================
+     */
+
+    @Secured(['permitAll'])
+    def liveSearch(Integer max) {
+
+        int pageSize =
+            Math.min(
+                Math.max(max ?: 12, 1),
+                100
+            )
+
+        String search =
+            params.search?.trim()
+
+        User currentUser =
+            springSecurityService.currentUser as User
+
+        boolean admin =
+            isAdmin(currentUser)
+
+
+        Map catalogResult =
+            bookService.searchCatalog(
+                search,
+                admin,
+                pageSize,
+                0
+            )
+
+
+        List<Book> bookList =
+            catalogResult.books as List<Book>
+
+        Long bookCount =
+            catalogResult.total as Long
+
+
+        render template: 'bookResults',
+            model: [
+                bookList : bookList,
+                bookCount: bookCount,
+                search   : search,
                 isAdmin  : admin
             ]
     }
@@ -240,14 +301,26 @@ class BookController {
                 coverFile &&
                 !coverFile.empty
             ) {
+
                 if (!coverFile.contentType?.startsWith('image/')) {
-                    throw new IllegalArgumentException('الغلاف يجب أن يكون ملف صورة.')
+
+                    throw new IllegalArgumentException(
+                        'الغلاف يجب أن يكون ملف صورة.'
+                    )
                 }
+
                 if (coverFile.size > 5 * 1024 * 1024) {
-                    throw new IllegalArgumentException('حجم الغلاف يجب ألا يتجاوز 5MB.')
+
+                    throw new IllegalArgumentException(
+                        'حجم الغلاف يجب ألا يتجاوز 5MB.'
+                    )
                 }
-                book.coverData = coverFile.bytes
-                book.coverContentType = coverFile.contentType
+
+                book.coverData =
+                    coverFile.bytes
+
+                book.coverContentType =
+                    coverFile.contentType
             }
 
 
@@ -266,7 +339,10 @@ class BookController {
                 )
             }
 
-        } catch (ValidationException | IllegalArgumentException e) {
+        } catch (
+            ValidationException |
+            IllegalArgumentException e
+        ) {
 
             println '===== BOOK SAVE ERROR ====='
             println "Exception: ${e.message}"
@@ -365,14 +441,26 @@ class BookController {
                 coverFile &&
                 !coverFile.empty
             ) {
+
                 if (!coverFile.contentType?.startsWith('image/')) {
-                    throw new IllegalArgumentException('الغلاف يجب أن يكون ملف صورة.')
+
+                    throw new IllegalArgumentException(
+                        'الغلاف يجب أن يكون ملف صورة.'
+                    )
                 }
+
                 if (coverFile.size > 5 * 1024 * 1024) {
-                    throw new IllegalArgumentException('حجم الغلاف يجب ألا يتجاوز 5MB.')
+
+                    throw new IllegalArgumentException(
+                        'حجم الغلاف يجب ألا يتجاوز 5MB.'
+                    )
                 }
-                book.coverData = coverFile.bytes
-                book.coverContentType = coverFile.contentType
+
+                book.coverData =
+                    coverFile.bytes
+
+                book.coverContentType =
+                    coverFile.contentType
             }
 
 
@@ -391,7 +479,10 @@ class BookController {
                 )
             }
 
-        } catch (ValidationException | IllegalArgumentException e) {
+        } catch (
+            ValidationException |
+            IllegalArgumentException e
+        ) {
 
             flash.message =
                 'تعذر تحديث الكتاب. راجع الحقول المطلوبة.'
@@ -429,23 +520,41 @@ class BookController {
 
     @Secured(['ROLE_ADMIN'])
     def delete(Long id) {
+
         Map result
+
         try {
-            result = bookService.deleteOrDeactivate(id)
-        } catch (ValidationException | IllegalArgumentException e) {
-            flash.message = e.message ?: 'تعذر حذف أو تعطيل الكتاب.'
-            redirect action: 'show', id: id
+
+            result =
+                bookService.deleteOrDeactivate(id)
+
+        } catch (
+            ValidationException |
+            IllegalArgumentException e
+        ) {
+
+            flash.message =
+                e.message ?:
+                'تعذر حذف أو تعطيل الكتاب.'
+
+            redirect action: 'show',
+                     id: id
+
             return
         }
+
 
         if (!result.found) {
             notFound()
             return
         }
 
-        flash.message = result.deleted ?
-            'تم حذف الكتاب بنجاح.' :
-            'للكتاب سجل عمليات سابق، لذلك تم تعطيله بدل حذفه نهائيًا.'
+
+        flash.message =
+            result.deleted ?
+                'تم حذف الكتاب بنجاح.' :
+                'للكتاب سجل عمليات سابق، لذلك تم تعطيله بدل حذفه نهائيًا.'
+
 
         redirect action: 'index'
     }
@@ -453,11 +562,21 @@ class BookController {
 
     @Secured(['ROLE_ADMIN'])
     def lookupMetadata(String isbn) {
+
         try {
-            render bookMetadataService.lookupByIsbn(isbn) as JSON
+
+            render bookMetadataService
+                .lookupByIsbn(isbn) as JSON
+
         } catch (Exception e) {
+
             response.status = 422
-            render([error: e.message] as JSON)
+
+            render(
+                [
+                    error: e.message
+                ] as JSON
+            )
         }
     }
 
@@ -470,27 +589,38 @@ class BookController {
 
 
         if (!book) {
+
             render status: NOT_FOUND
             return
         }
 
+
         User currentUser =
             springSecurityService.currentUser as User
+
 
         if (
             book.active != true &&
             !isAdmin(currentUser)
         ) {
+
             render status: NOT_FOUND
             return
         }
 
-        if (!book.coverData && book.externalCoverUrl) {
+
+        if (
+            !book.coverData &&
+            book.externalCoverUrl
+        ) {
+
             redirect url: book.externalCoverUrl
             return
         }
 
+
         if (!book.coverData) {
+
             render status: NOT_FOUND
             return
         }
@@ -736,7 +866,9 @@ class BookController {
      * bind these values to BigDecimal because decimal
      * parsing depends on locale.
      */
-    private void applyBookPriceFields(Book book) {
+    private void applyBookPriceFields(
+        Book book
+    ) {
 
         book.physicalSalePrice =
             parseBookDecimal(
@@ -785,22 +917,34 @@ class BookController {
                 ?.toString()
                 ?.trim()
 
+
         if (!raw) {
             return defaultValue
         }
 
-        raw = raw
-            .tr('٠١٢٣٤٥٦٧٨٩', '0123456789')
-            .tr('۰۱۲۳۴۵۶۷۸۹', '0123456789')
-            .replace('٬', '')
-            .replace('٫', '.')
-            .replace(',', '.')
+
+        raw =
+            raw
+                .tr(
+                    '٠١٢٣٤٥٦٧٨٩',
+                    '0123456789'
+                )
+                .tr(
+                    '۰۱۲۳۴۵۶۷۸۹',
+                    '0123456789'
+                )
+                .replace('٬', '')
+                .replace('٫', '.')
+                .replace(',', '.')
+
 
         try {
 
             return new BigDecimal(raw)
 
-        } catch (NumberFormatException ignored) {
+        } catch (
+            NumberFormatException ignored
+        ) {
 
             throw new IllegalArgumentException(
                 'أدخل قيمة مالية صحيحة، مثل 3 أو 3.50.'
@@ -809,33 +953,51 @@ class BookController {
     }
 
 
-    private boolean isAdmin(User user) {
+    private boolean isAdmin(
+        User user
+    ) {
 
         if (user == null) {
             return false
         }
 
+
         for (def role : user.authorities) {
-            if (role.authority == 'ROLE_ADMIN') {
+
+            if (
+                role.authority ==
+                'ROLE_ADMIN'
+            ) {
+
                 return true
             }
         }
+
 
         return false
     }
 
 
-    private boolean isLibraryUser(User user) {
+    private boolean isLibraryUser(
+        User user
+    ) {
 
         if (user == null) {
             return false
         }
 
+
         for (def role : user.authorities) {
-            if (role.authority == 'ROLE_USER') {
+
+            if (
+                role.authority ==
+                'ROLE_USER'
+            ) {
+
                 return true
             }
         }
+
 
         return false
     }
@@ -855,6 +1017,7 @@ class BookController {
 
 
             '*' {
+
                 render status: NOT_FOUND
             }
         }
